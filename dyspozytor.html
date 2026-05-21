@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Dyspozytora - Baza Live v1.2</title>
+    <title>Panel Dyspozytora - Baza Live v1.4</title>
     <style>
         :root {
             --bg-color: #0c0c0e;
@@ -24,7 +24,7 @@
         input, select, textarea { width: 100%; padding: 12px; background: #202026; border: 1px solid #3d3d4e; border-radius: 6px; color: white; font-size: 14px; margin-bottom: 15px; outline: none; font-family: inherit; }
         input:focus, select:focus, textarea:focus { border-color: var(--accent-blue); }
 
-        .btn { width: 100%; background: var(--accent-blue); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn { width: 100%; background: var(--accent-blue); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; }
         .btn-green { background: var(--accent-green); }
         .btn-red { background: var(--accent-red); margin-top: 5px; }
         
@@ -39,11 +39,15 @@
         .form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
         
-        /* Styl dla nowej listy kierowców */
-        .driver-list-box { max-height: 180px; overflow-y: auto; background: #1c1c22; padding: 10px; border-radius: 6px; border: 1px solid #2d2d3a; margin-top: 10px; }
-        .driver-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 8px; border-bottom: 1px solid #2d2d3a; }
+        .list-box { max-height: 150px; overflow-y: auto; background: #1c1c22; padding: 10px; border-radius: 6px; border: 1px solid #2d2d3a; margin-top: 10px; }
+        .driver-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 8px; border-bottom: 1px solid #2d2d3a; align-items: center; }
         .driver-item:last-child { border-bottom: none; }
         .driver-item .id-tag { color: var(--accent-blue); font-weight: bold; }
+
+        /* Style dla listy komunikatów z opcją edycji */
+        .msg-edit-item { background: #202026; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--accent-orange); font-size: 13px; }
+        .msg-edit-controls { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-mini { padding: 4px 8px; font-size: 11px; width: auto; text-transform: none; border-radius: 4px; }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -71,19 +75,22 @@
             
             <div class="panel-col">
                 <div class="card">
-                    <h3>📇 Rejestr Pracowników (Przypisanie ID)</h3>
-                    <label>ID Służbowe: <input type="number" id="reg-id" placeholder="np. 105"></label>
+                    <h3>📇 Rejestr Pracowników i Stałych Wozów</h3>
+                    <div class="form-pair">
+                        <label>ID Służbowe: <input type="number" id="reg-id" placeholder="np. 105"></label>
+                        <label>Stały wóz (#): <input type="text" id="reg-bus" placeholder="np. #4231"></label>
+                    </div>
                     <label>Imię i Nazwisko kierowcy: <input type="text" id="reg-name" placeholder="Jan Kowalski"></label>
-                    <button class="btn" onclick="saveDriver()">Zapisz w bazie sieciowej</button>
+                    <button class="btn" onclick="saveDriver()">Zapisz / Aktualizuj dane pracownika</button>
                     
-                    <h4 style="font-size:12px; color:var(--text-muted); margin-top:20px; text-transform:uppercase;">Zapisani kierowcy w bazie:</h4>
-                    <div class="driver-list-box" id="active-drivers-list">
+                    <h4 style="font-size:12px; color:var(--text-muted); margin-top:20px; text-transform:uppercase;">Zapisani kierowcy i wozy w bazie:</h4>
+                    <div class="list-box" id="active-drivers-list">
                         <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Ładowanie listy...</div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3 style="color: var(--accent-orange);">⚠️ Generator Komunikatów i Utrudnień (Live)</h3>
+                    <h3 style="color: var(--accent-orange);" id="msg-form-title">⚠️ Generator Komunikatów Ruchu</h3>
                     <div class="form-pair">
                         <label>Typ (Ważność/Kolor):
                             <select id="msg-type">
@@ -96,12 +103,17 @@
                     </div>
                     <label>Miejsce / Nazwa Utrudnienia: <input type="text" id="msg-title" placeholder="np. Al. Niepodległości, Pętla Oliwa"></label>
                     <label>Treść komunikatu: 
-                        <textarea id="msg-content" rows="3" placeholder="Wpisz szczegóły objazdu lub utrudnienia..."></textarea>
+                        <textarea id="msg-content" rows="3" placeholder="Wpisz szczegóły objazdu..."></textarea>
                     </label>
-                    <button class="btn" style="background: var(--accent-orange);" onclick="addLiveMessage()">Opublikuj Komunikat sieciowo</button>
+                    
+                    <input type="hidden" id="edit-msg-index" value="-1"> <button class="btn" style="background: var(--accent-orange);" id="btn-msg-submit" onclick="addLiveMessage()">Opublikuj Komunikat sieciowo</button>
+                    <button class="btn" style="background: #555; display:none; margin-top:5px;" id="btn-msg-cancel" onclick="cancelMsgEdit()">Anuluj edycję</button>
                     <button class="btn btn-red" onclick="clearAllMessages()">❌ Usuń wszystkie komunikaty</button>
                     
-                    <div id="msg-counter-preview" style="font-size:11px; margin-top:10px; color: var(--text-muted);">Łączenie z serwerem komunikatów...</div>
+                    <h4 style="font-size:12px; color:var(--text-muted); margin-top:20px; text-transform:uppercase;">Aktywne ogłoszenia (Zarządzanie/Edycja):</h4>
+                    <div class="list-box" id="dispatcher-messages-list" style="max-height: 200px;">
+                        <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Brak komunikatów na serwerze.</div>
+                    </div>
                 </div>
             </div>
 
@@ -126,9 +138,12 @@
                     <label>Godziny pracy: <input type="text" id="disp-hours" placeholder="04:15 - 12:30"></label>
                 </div>
                 <div class="form-pair">
-                    <label>Nr boczny wozu: <input type="text" id="disp-bus" placeholder="#4231"></label>
-                    <label>Podpis dyspozytora: <input type="text" id="disp-sig" placeholder="Dysp. Kwiatkowski"></label>
+                    <label style="grid-column: span 2; color: var(--accent-orange);">
+                        Wóz na ten dzień (Zastępczy / Opcjonalnie):
+                        <input type="text" id="disp-custom-bus" placeholder="Zostaw puste, aby przypisać wóz stały z rejestru">
+                    </label>
                 </div>
+                <label>Podpis dyspozytora: <input type="text" id="disp-sig" placeholder="Dysp. Kwiatkowski"></label>
                 <label>Trasa przejazdu (Kierunek): 
                     <input type="text" id="disp-route" placeholder="Orunia Górna - Wały Piastowskie">
                 </label>
@@ -166,23 +181,42 @@
             }
         }
 
-        // ŚCIĄGAWKA KIEROWCÓW LIVE
         function observeDrivers() {
             database.ref('driversRegistry').on('value', (snapshot) => {
                 const drivers = snapshot.val();
                 const container = document.getElementById('active-drivers-list');
+                if(!drivers) { container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Brak kierowców</div>`; return; }
+                let html = '';
+                Object.keys(drivers).sort((a,b) => a - b).forEach(id => {
+                    const d = drivers[id];
+                    html += `<div class="driver-item"><span class="id-tag">[ID: ${id}]</span><span style="color:white;">${d.name} <small style="color:var(--accent-orange);">(${d.bus || 'Brak wozu'})</small></span></div>`;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        // NASŁUCHIWANIE KOMUNIKATÓW Z FUNKCJĄ WYŚWIETLANIA EDYCJI DLA DYSPOZYTORA
+        let globalMessages = [];
+        function observeMessages() {
+            database.ref('dispatcherMessages').on('value', (snapshot) => {
+                globalMessages = snapshot.val() || [];
+                const container = document.getElementById('dispatcher-messages-list');
                 
-                if(!drivers) {
-                    container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Brak dodanych kierowców</div>`;
+                if (globalMessages.length === 0) {
+                    container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Brak komunikatów na serwerze.</div>`;
                     return;
                 }
 
                 let html = '';
-                Object.keys(drivers).sort((a,b) => a - b).forEach(id => {
+                globalMessages.forEach((msg, index) => {
                     html += `
-                        <div class="driver-item">
-                            <span class="id-tag">[ID: ${id}]</span>
-                            <span style="color:white;">${drivers[id]}</span>
+                        <div class="msg-edit-item">
+                            <div><strong>[${msg.tag}]</strong> ${msg.title}</div>
+                            <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">${msg.content.substring(0, 45)}...</div>
+                            <div class="msg-edit-controls">
+                                <button class="btn btn-mini btn-green" onclick="startEditMsg(${index})">📝 Edytuj treść</button>
+                                <button class="btn btn-mini btn-red" onclick="deleteSingleMsg(${index})">Usuń</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -190,11 +224,29 @@
             });
         }
 
-        function observeMessages() {
-            database.ref('dispatcherMessages').on('value', (snapshot) => {
-                const data = snapshot.val() || [];
-                document.getElementById('msg-counter-preview').innerText = `Obecnie na serwerze wyświetla się komunikatów: ${data.length}`;
-            });
+        // EDYCJA KOMUNIKATU - ŁADOWANIE DO FORMULARZA
+        function startEditMsg(index) {
+            const msg = globalMessages[index];
+            document.getElementById('msg-form-title').innerText = "📝 Edytujesz Komunikat Ruchu";
+            document.getElementById('msg-type').value = msg.type;
+            document.getElementById('msg-tag').value = msg.tag;
+            document.getElementById('msg-title').value = msg.title;
+            document.getElementById('msg-content').value = msg.content;
+            document.getElementById('edit-msg-index').value = index;
+            
+            document.getElementById('btn-msg-submit').innerText = "Zaktualizuj ogłoszenie w sieci";
+            document.getElementById('btn-msg-cancel').style.display = 'block';
+            document.getElementById('msg-form-title').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelMsgEdit() {
+            document.getElementById('msg-form-title').innerText = "⚠️ Generator Komunikatów Ruchu";
+            document.getElementById('msg-tag').value = "";
+            document.getElementById('msg-title').value = "";
+            document.getElementById('msg-content').value = "";
+            document.getElementById('edit-msg-index').value = "-1";
+            document.getElementById('btn-msg-submit').innerText = "Opublikuj Komunikat sieciowo";
+            document.getElementById('btn-msg-cancel').style.display = 'none';
         }
 
         function addLiveMessage() {
@@ -202,43 +254,56 @@
             const tag = document.getElementById('msg-tag').value.trim() || "INFO";
             const title = document.getElementById('msg-title').value.trim();
             const content = document.getElementById('msg-content').value.trim();
+            const editIndex = parseInt(document.getElementById('edit-msg-index').value);
 
-            if (!title || !content) return alert("Wprowadź tytuł i treść ogłoszenia!");
+            if (!title || !content) return alert("Uzupełnij pola ogłoszenia!");
 
-            database.ref('dispatcherMessages').once('value').then((snapshot) => {
-                const messagesList = snapshot.val() || [];
-                messagesList.unshift({ type, tag, title, content });
-                
-                database.ref('dispatcherMessages').set(messagesList, (error) => {
-                    if(error) { alert("Błąd zapisu w chmurze!"); } else {
-                        alert("Komunikat został opublikowany w sieci!");
-                        document.getElementById('msg-tag').value = "";
-                        document.getElementById('msg-title').value = "";
-                        document.getElementById('msg-content').value = "";
-                    }
+            if (editIndex > -1) {
+                // Tryb Edycji - Aktualizujemy istniejący wpis
+                globalMessages[editIndex] = { type, tag, title, content };
+                database.ref('dispatcherMessages').set(globalMessages, () => {
+                    alert("Zaktualizowano komunikat w chmurze!");
+                    cancelMsgEdit();
                 });
-            });
+            } else {
+                // Tryb Nowego wpisu
+                globalMessages.unshift({ type, tag, title, content });
+                database.ref('dispatcherMessages').set(globalMessages, () => {
+                    alert("Opublikowano nowy komunikat!");
+                    document.getElementById('msg-tag').value = "";
+                    document.getElementById('msg-title').value = "";
+                    document.getElementById('msg-content').value = "";
+                });
+            }
+        }
+
+        function deleteSingleMsg(index) {
+            if(confirm("Usunąć ten komunikat?")) {
+                globalMessages.splice(index, 1);
+                database.ref('dispatcherMessages').set(globalMessages);
+            }
         }
 
         function clearAllMessages() {
-            if(confirm("Czy na pewno chcesz skasować komunikaty z chmury?")) {
-                database.ref('dispatcherMessages').remove().then(() => {
-                    alert("Wyczyszczono tablicę w sieci.");
-                });
+            if(confirm("Wyczyścić całą tablicę?")) {
+                database.ref('dispatcherMessages').remove().then(() => alert("Wyczyszczono."));
             }
         }
 
         function saveDriver() {
             const id = document.getElementById('reg-id').value.trim();
             const name = document.getElementById('reg-name').value.trim();
+            const bus = document.getElementById('reg-bus').value.trim() || "Brak wozu";
+            if(!id || !name) return alert("Uzupełnij ID oraz Imię i Nazwisko!");
 
-            if(!id || !name) return alert("Uzupełnij ID oraz nazwisko!");
-
-            database.ref('driversRegistry/' + id).set(name, (error) => {
-                if(error) { alert("Błąd serwera!"); } else {
-                    alert(`Zapisano w chmurze: ID ${id} -> ${name}`);
+            database.ref('driversRegistry/' + id).set({ name, bus }, (error) => {
+                if(error) { alert("Błąd!"); } else {
+                    database.ref('systemDatabase/' + id + '/busNum').set(bus);
+                    database.ref('systemDatabase/' + id + '/name').set(name);
+                    alert(`Zapisano pomyślnie pracownika ID: ${id}`);
                     document.getElementById('reg-id').value = "";
                     document.getElementById('reg-name').value = "";
+                    document.getElementById('reg-bus').value = "";
                 }
             });
         }
@@ -248,37 +313,61 @@
             const day = document.getElementById('disp-day').value;
             const line = document.getElementById('disp-line').value.trim();
             const hours = document.getElementById('disp-hours').value.trim() || "06:00 - 14:00";
-            const bus = document.getElementById('disp-bus').value.trim();
+            const customBus = document.getElementById('disp-custom-bus').value.trim(); // Nowe pole wozu zastępczego
             const sig = document.getElementById('disp-sig').value.trim() || "Dyspozytor";
             const route = document.getElementById('disp-route').value.trim() || "Trasa zadana";
 
-            if(!id || !line || !bus) return alert("Wypełnij pola: ID, Linia oraz Wóz!");
+            if(!id || !line) return alert("Wypełnij ID oraz Linię!");
 
             database.ref('driversRegistry/' + id).once('value').then((snapshot) => {
-                const name = snapshot.val() || `Kierowca o ID: ${id}`;
+                const regData = snapshot.val();
+                const name = regData ? regData.name : `Kierowca o ID: ${id}`;
+                const defaultBus = regData ? regData.bus : "Brak wozu";
                 
-                const schedule = daysOfWeek.map(d => ({
-                    date: d === day ? `${d} [SŁUŻBA]` : d,
-                    line: d === day ? line : "---",
-                    route: d === day ? route : "WOLNE",
-                    hours: d === day ? hours : "---",
-                    current: d === day
-                }));
+                // Pobieramy stare dane grafiku, aby zachować przydziały wozów z innych dni
+                database.ref('systemDatabase/' + id).once('value').then((oldSchedSnap) => {
+                    const oldData = oldSchedSnap.val();
+                    
+                    const schedule = daysOfWeek.map(d => {
+                        if (d === day) {
+                            // Dzień aktualnie generowany: jeśli wpisano customBus to go użyj, jeśli nie - użyj stałego wozu
+                            return {
+                                date: `${d} [SŁUŻBA]`,
+                                line: line,
+                                route: route,
+                                hours: hours,
+                                dayBus: customBus || defaultBus, // Przypisanie dedykowanego wozu na ten dzień
+                                current: true
+                            };
+                        } else {
+                            // Przepisywanie innych dni lub tworzenie czystych
+                            let existingDay = oldData && oldData.schedule ? oldData.schedule.find(x => x.date.startsWith(d)) : null;
+                            return {
+                                date: existingDay ? existingDay.date : d,
+                                line: existingDay ? existingDay.line : "---",
+                                route: existingDay ? existingDay.route : "WOLNE",
+                                hours: existingDay ? existingDay.hours : "---",
+                                dayBus: existingDay ? (existingDay.dayBus || defaultBus) : defaultBus,
+                                current: false
+                            };
+                        }
+                    });
 
-                database.ref('systemDatabase/' + id).set({
-                    name: name,
-                    busNum: bus,
-                    activeDay: day,
-                    dispatcher: sig,
-                    schedule: schedule
-                }, (error) => {
-                    if(error) { alert("Błąd wysyłania grafiku!"); } else {
-                        alert(`Grafik dla ID ${id} wysłany pomyślnie na serwer!`);
-                        document.getElementById('disp-id').value = "";
-                        document.getElementById('disp-line').value = "";
-                        document.getElementById('disp-bus').value = "";
-                        document.getElementById('disp-route').value = "";
-                    }
+                    database.ref('systemDatabase/' + id).set({
+                        name: name,
+                        busNum: defaultBus, // Zostaje w nagłówku jako informacja o wozie stałym
+                        activeDay: day,
+                        dispatcher: sig,
+                        schedule: schedule
+                    }, (error) => {
+                        if(error) { alert("Błąd!"); } else {
+                            alert(`Grafik dla ID ${id} wysłany do chmury!`);
+                            document.getElementById('disp-id').value = "";
+                            document.getElementById('disp-line').value = "";
+                            document.getElementById('disp-custom-bus').value = "";
+                            document.getElementById('disp-route').value = "";
+                        }
+                    });
                 });
             });
         }
