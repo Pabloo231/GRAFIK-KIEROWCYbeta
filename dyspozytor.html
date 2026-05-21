@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Dyspozytora - Baza Live v1.1</title>
+    <title>Panel Dyspozytora - Baza Live v1.2</title>
     <style>
         :root {
             --bg-color: #0c0c0e;
@@ -39,7 +39,11 @@
         .form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
         
-        #msg-counter-preview { font-size:11px; margin-top:10px; color: var(--text-muted); }
+        /* Styl dla nowej listy kierowców */
+        .driver-list-box { max-height: 180px; overflow-y: auto; background: #1c1c22; padding: 10px; border-radius: 6px; border: 1px solid #2d2d3a; margin-top: 10px; }
+        .driver-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 8px; border-bottom: 1px solid #2d2d3a; }
+        .driver-item:last-child { border-bottom: none; }
+        .driver-item .id-tag { color: var(--accent-blue); font-weight: bold; }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -57,7 +61,7 @@
     <div class="main-panel" id="panel-block">
         <div class="panel-header">
             <div>
-                <h2>🛠️ Centrala Ruchu OMSI 2 - Chmura Live Beta 1.1</h2>
+                <h2>🛠️ Centrala Ruchu - Centrum Zarządzania Grafikami i Informacją</h2>
                 <p style="color: var(--text-muted); font-size: 13px;">Dane zapisują się automatycznie w bazie i trafiają na telefony kierowców.</p>
             </div>
             <button class="btn" onclick="location.reload()" style="width:auto; background:#333; padding: 5px 15px;">Zablokuj panel</button>
@@ -70,7 +74,12 @@
                     <h3>📇 Rejestr Pracowników (Przypisanie ID)</h3>
                     <label>ID Służbowe: <input type="number" id="reg-id" placeholder="np. 105"></label>
                     <label>Imię i Nazwisko kierowcy: <input type="text" id="reg-name" placeholder="Jan Kowalski"></label>
-                    <button class="btn" onclick="saveDriver()">Zapisz w chmurze sieciowej</button>
+                    <button class="btn" onclick="saveDriver()">Zapisz w bazie sieciowej</button>
+                    
+                    <h4 style="font-size:12px; color:var(--text-muted); margin-top:20px; text-transform:uppercase;">Zapisani kierowcy w bazie:</h4>
+                    <div class="driver-list-box" id="active-drivers-list">
+                        <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Ładowanie listy...</div>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -92,7 +101,7 @@
                     <button class="btn" style="background: var(--accent-orange);" onclick="addLiveMessage()">Opublikuj Komunikat sieciowo</button>
                     <button class="btn btn-red" onclick="clearAllMessages()">❌ Usuń wszystkie komunikaty</button>
                     
-                    <div id="msg-counter-preview">Łączenie z serwerem komunikatów...</div>
+                    <div id="msg-counter-preview" style="font-size:11px; margin-top:10px; color: var(--text-muted);">Łączenie z serwerem komunikatów...</div>
                 </div>
             </div>
 
@@ -132,7 +141,6 @@
         const PIN_SECRET = "2580";
         const daysOfWeek = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
 
-        // TWOJA KONFIGURACJA Z FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBVzHQx3OkcLZ-RDwq4Asrd7NfszmhLtME",
             authDomain: "gait-panel.firebaseapp.com",
@@ -151,10 +159,35 @@
                 document.getElementById('auth-block').style.display = 'none';
                 document.getElementById('panel-block').style.display = 'block';
                 observeMessages();
+                observeDrivers();
             } else {
                 alert("Błędny kod PIN!");
                 document.getElementById('pin-input').value = "";
             }
+        }
+
+        // ŚCIĄGAWKA KIEROWCÓW LIVE
+        function observeDrivers() {
+            database.ref('driversRegistry').on('value', (snapshot) => {
+                const drivers = snapshot.val();
+                const container = document.getElementById('active-drivers-list');
+                
+                if(!drivers) {
+                    container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Brak dodanych kierowców</div>`;
+                    return;
+                }
+
+                let html = '';
+                Object.keys(drivers).sort((a,b) => a - b).forEach(id => {
+                    html += `
+                        <div class="driver-item">
+                            <span class="id-tag">[ID: ${id}]</span>
+                            <span style="color:white;">${drivers[id]}</span>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            });
         }
 
         function observeMessages() {
