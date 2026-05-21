@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Dyspozytora - Zarządzanie v6.1</title>
+    <style>
+        :root {
+            --bg-color: #0c0c0e;
+            --card-bg: #16161a;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a8;
+            --accent-blue: #2f80ed;
+            --accent-green: #27ae60;
+            --accent-red: #eb5757;
+            --accent-orange: #f2994a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 30px; }
+        
+        .lock-screen { max-width: 400px; margin: 150px auto; text-align: center; background: #16161a; padding: 40px; border-radius: 12px; border: 1px solid #2d2d3a; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .lock-screen h2 { margin-bottom: 20px; }
+        
+        input, select, textarea { width: 100%; padding: 12px; background: #202026; border: 1px solid #3d3d4e; border-radius: 6px; color: white; font-size: 14px; margin-bottom: 15px; outline: none; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent-blue); }
+
+        .btn { width: 100%; background: var(--accent-blue); color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-green { background: var(--accent-green); }
+        .btn-red { background: var(--accent-red); margin-top: 5px; }
+        
+        .main-panel { display: none; max-width: 1200px; margin: 0 auto; }
+        .panel-header { display: flex; justify-content: space-between; border-bottom: 2px solid #222; padding-bottom: 15px; margin-bottom: 25px; }
+        
+        .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .panel-col { display: flex; flex-direction: column; gap: 30px; }
+        .card { background: var(--card-bg); border: 1px solid #23232a; padding: 25px; border-radius: 12px; }
+        .card h3 { color: var(--accent-blue); margin-bottom: 20px; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; }
+        
+        .form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
+        
+        .mini-msg-preview { font-size: 12px; padding: 10px; border-radius: 6px; background: #202026; margin-top: 10px; border-left: 3px solid #555; }
+    </style>
+</head>
+<body>
+
+    <!-- BLOKADA PIN (Niezmiennie: 2580) -->
+    <div class="lock-screen" id="auth-block">
+        <h2>🔒 Panel Dyspozytorski</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">Wprowadź kod autoryzacyjny dyspozytora:</p>
+        <input type="password" id="pin-input" placeholder="••••" style="text-align:center; font-size: 20px; letter-spacing: 5px;" maxlength="4">
+        <button class="btn" onclick="unlock()">Autoryzuj dostęp</button>
+    </div>
+
+    <!-- WŁAŚCIWY PANEL -->
+    <div class="main-panel" id="panel-block">
+        <div class="panel-header">
+            <div>
+                <h2>🛠️ Centrala Ruchu - Centrum Zarządzania Grafikami i Informacją</h2>
+                <p style="color: var(--text-muted); font-size: 13px;">Dodawaj służby, konfiguruj bazę pracowników i twórz komunikaty na żywo.</p>
+            </div>
+            <button class="btn" onclick="location.reload()" style="width:auto; background:#333; padding: 5px 15px;">Zablokuj panel</button>
+        </div>
+
+        <div class="panel-grid">
+            
+            <div class="panel-col">
+                <!-- LEWA SEKCOA 1: REJESTR KIEROWCÓW -->
+                <div class="card">
+                    <h3>📇 Rejestr Pracowników (Przypisanie ID)</h3>
+                    <label>ID Służbowe: <input type="number" id="reg-id" placeholder="np. 105"></label>
+                    <label>Imię i Nazwisko kierowcy: <input type="text" id="reg-name" placeholder="Jan Kowalski"></label>
+                    <button class="btn" onclick="saveDriver()">Zapisz w bazie</button>
+                </div>
+
+                <!-- LEWA SEKCJA 2: MODUŁ GENEROWANIA KOMUNIKATÓW -->
+                <div class="card">
+                    <h3 style="color: var(--accent-orange);">⚠️ Generator Komunikatów i Utrudnień (Live)</h3>
+                    <div class="form-pair">
+                        <label>Typ (Ważność/Kolor):
+                            <select id="msg-type">
+                                <option value="danger">🚨 Bardzo Ważne (Czerwony)</option>
+                                <option value="warning">🚧 Budowa / Remont (Pomarańczowy)</option>
+                                <option value="info">ℹ️ Ogłoszenie / Informacja (Niebieski)</option>
+                            </select>
+                        </label>
+                        <label>Tag Nagłówka: <input type="text" id="msg-tag" placeholder="np. BUDOWA, WYPADEK"></label>
+                    </div>
+                    <label>Miejsce / Nazwa Utrudnienia: <input type="text" id="msg-title" placeholder="np. Al. Niepodległości, Pętla Oliwa"></label>
+                    <label>Treść komunikatu: 
+                        <textarea id="msg-content" rows="3" placeholder="Wpisz szczegóły objazdu lub utrudnienia..."></textarea>
+                    </label>
+                    <button class="btn" style="background: var(--accent-orange);" onclick="addLiveMessage()">Opublikuj Komunikat</button>
+                    <button class="btn btn-red" onclick="clearAllMessages()">❌ Usuń wszystkie komunikaty</button>
+                    
+                    <div id="msg-counter-preview" style="font-size:11px; margin-top:10px; color: var(--text-muted);"></div>
+                </div>
+            </div>
+
+            <!-- PRAWA STRONA: GENERATOR GRAFIKÓW -->
+            <div class="card">
+                <h3>📝 Generator Służb Tygodniowych</h3>
+                <div class="form-pair">
+                    <label>ID Kierowcy: <input type="number" id="disp-id" placeholder="np. 105"></label>
+                    <label>Dzień tygodnia: 
+                        <select id="disp-day">
+                            <option value="Poniedziałek">Poniedziałek</option>
+                            <option value="Wtorek">Wtorek</option>
+                            <option value="Środa">Środa</option>
+                            <option value="Czwartek">Czwartek</option>
+                            <option value="Piątek">Piątek</option>
+                            <option value="Sobota">Sobota</option>
+                            <option value="Niedziela">Niedziela</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="form-pair">
+                    <label>Numer Linii: <input type="text" id="disp-line" placeholder="np. 154"></label>
+                    <label>Godziny pracy: <input type="text" id="disp-hours" placeholder="04:15 - 12:30"></label>
+                </div>
+                <div class="form-pair">
+                    <label>Nr boczny wozu: <input type="text" id="disp-bus" placeholder="#4231"></label>
+                    <label>Podpis dyspozytora: <input type="text" id="disp-sig" placeholder="Dysp. Kwiatkowski"></label>
+                </div>
+                <label>Trasa przejazdu (Kierunek): 
+                    <input type="text" id="disp-route" placeholder="Orunia Górna - Wały Piastowskie">
+                </label>
+                <button class="btn btn-green" onclick="saveSchedule()">Zatwierdź i Wystaw Grafik</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PIN_SECRET = "2580";
+        const daysOfWeek = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
+
+        function unlock() {
+            if(document.getElementById('pin-input').value === PIN_SECRET) {
+                document.getElementById('auth-block').style.display = 'none';
+                document.getElementById('panel-block').style.display = 'block';
+                updateMsgCounter();
+            } else {
+                alert("Błędny kod PIN!");
+                document.getElementById('pin-input').value = "";
+            }
+        }
+
+        // --- SKRYPTY OBSŁUGI KOMUNIKATÓW ---
+        function addLiveMessage() {
+            const type = document.getElementById('msg-type').value;
+            const tag = document.getElementById('msg-tag').value.trim() || "INFO";
+            const title = document.getElementById('msg-title').value.trim();
+            const content = document.getElementById('msg-content').value.trim();
+
+            if (!title || !content) return alert("Wprowadź tytuł i treść ogłoszenia!");
+
+            const messagesList = JSON.parse(localStorage.getItem('dispatcherMessages')) || [];
+            
+            // Dodanie nowej wiadomości na początek tablicy
+            messagesList.unshift({ type, tag, title, content });
+            localStorage.setItem('dispatcherMessages', JSON.stringify(messagesList));
+
+            alert("Komunikat został opublikowany i pojawi się na tablicach kierowców!");
+            
+            document.getElementById('msg-tag').value = "";
+            document.getElementById('msg-title').value = "";
+            document.getElementById('msg-content').value = "";
+            updateMsgCounter();
+        }
+
+        function clearAllMessages() {
+            if(confirm("Czy na pewno chcesz usunąć ze strony głównej WSZYSTKIE aktualne komunikaty?")) {
+                localStorage.removeItem('dispatcherMessages');
+                alert("Wyczyszczono tablicę komunikatów.");
+                updateMsgCounter();
+            }
+        }
+
+        function updateMsgCounter() {
+            const messagesList = JSON.parse(localStorage.getItem('dispatcherMessages')) || [];
+            document.getElementById('msg-counter-preview').innerText = `Obecnie na stronie wyświetla się komunikatów: ${messagesList.length}`;
+        }
+
+        // --- SKRYPTY GRAFIKU ---
+        function saveDriver() {
+            const driversRegistry = JSON.parse(localStorage.getItem('driversRegistry')) || {};
+            const id = document.getElementById('reg-id').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+
+            if(!id || !name) return alert("Uzupełnij ID oraz nazwisko!");
+            driversRegistry[id] = name;
+            localStorage.setItem('driversRegistry', JSON.stringify(driversRegistry));
+            
+            alert(`Zapisano pomyślnie ID ${id} dla: ${name}`);
+            document.getElementById('reg-id').value = "";
+            document.getElementById('reg-name').value = "";
+        }
+
+        function saveSchedule() {
+            const driversRegistry = JSON.parse(localStorage.getItem('driversRegistry')) || {};
+            const systemDatabase = JSON.parse(localStorage.getItem('systemDatabase')) || {};
+
+            const id = document.getElementById('disp-id').value.trim();
+            const day = document.getElementById('disp-day').value;
+            const line = document.getElementById('disp-line').value.trim();
+            const hours = document.getElementById('disp-hours').value.trim() || "06:00 - 14:00";
+            const bus = document.getElementById('disp-bus').value.trim();
+            const sig = document.getElementById('disp-sig').value.trim() || "Dyspozytor";
+            const route = document.getElementById('disp-route').value.trim() || "Trasa zadana";
+
+            if(!id || !line || !bus) return alert("Wypełnij pola: ID, Linia oraz Wóz!");
+
+            const name = driversRegistry[id] || `Kierowca o ID: ${id}`;
+            const schedule = daysOfWeek.map(d => ({
+                date: d === day ? `${d} [SŁUŻBA]` : d,
+                line: d === day ? line : "---",
+                route: d === day ? route : "WOLNE",
+                hours: d === day ? hours : "---",
+                current: d === day
+            }));
+
+            systemDatabase[id] = { name: name, busNum: bus, activeDay: day, dispatcher: sig, schedule: schedule };
+            localStorage.setItem('systemDatabase', JSON.stringify(systemDatabase));
+
+            alert(`Grafik dla ID ${id} na ${day} został zaktualizowany!`);
+            document.getElementById('disp-id').value = "";
+            document.getElementById('disp-line').value = "";
+            document.getElementById('disp-bus').value = "";
+            document.getElementById('disp-route').value = "";
+        }
+    </script>
+</body>
+</html>

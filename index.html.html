@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Pracownika - Grafik v6.1</title>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --card-bg: #1e1e24;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a8;
+            --accent-blue: #2f80ed;
+            --accent-green: #27ae60;
+            --accent-red: #eb5757;
+            --accent-orange: #f2994a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; min-height: 100vh; display: flex; flex-direction: column; gap: 20px; }
+        body.login-mode { background: linear-gradient(rgba(18, 18, 20, 0.8), rgba(18, 18, 20, 0.85)), url('https://files.pdg.pl/ztm-gdansk-autobus.jpg') no-repeat center center fixed; background-size: cover; }
+        
+        .login-screen { background: rgba(30, 30, 36, 0.95); backdrop-filter: blur(10px); padding: 40px 30px; border-radius: 12px; max-width: 450px; margin: 120px auto; text-align: center; border-top: 6px solid #e1261c; box-shadow: 0 15px 35px rgba(0,0,0,0.7); }
+        .login-screen h2 { font-size: 26px; margin-bottom: 10px; }
+        .login-screen p { color: var(--text-muted); margin-bottom: 25px; font-size: 14px; line-height: 1.4; }
+        
+        input { width: 100%; padding: 14px; background: #2a2a35; border: 2px solid #3d3d4e; border-radius: 8px; color: white; font-size: 16px; margin-bottom: 15px; outline: none; }
+        input:focus { border-color: var(--accent-blue); }
+
+        .btn-login { width: 100%; background: var(--accent-blue); color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+        .btn-login:hover { background: #256ecf; }
+
+        .main-dashboard { display: none; flex-direction: column; gap: 20px; flex-grow: 1; }
+        header { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 15px 25px; border-radius: 12px; border-left: 6px solid var(--accent-blue); }
+        .bus-info h1 { font-size: 24px; }
+        .bus-info p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+        .btn-logout { background: #333; border: none; color: white; padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 4px; margin-left: 10px; }
+        .live-time { font-size: 28px; font-weight: bold; font-variant-numeric: tabular-nums; }
+
+        .dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 20px; }
+        .card-title { font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+        .schedule-table { width: 100%; border-collapse: collapse; }
+        .schedule-table th, .schedule-table td { text-align: left; padding: 12px; border-bottom: 1px solid #2a2a32; }
+        .schedule-table th { color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+        .schedule-table tr.today { background: rgba(47, 128, 237, 0.1); font-weight: bold; border-left: 4px solid var(--accent-blue); }
+
+        .msg-container { display: flex; flex-direction: column; gap: 12px; }
+        .msg-box { padding: 15px; border-radius: 8px; font-size: 14px; line-height: 1.4; }
+        .msg-box.danger { background: rgba(235, 87, 87, 0.1); border: 1px solid var(--accent-red); color: #ff8080; }
+        .msg-box.warning { background: rgba(242, 153, 74, 0.1); border: 1px solid var(--accent-orange); color: #ffd090; }
+        .msg-box.info { background: rgba(47, 128, 237, 0.1); border: 1px solid var(--accent-blue); color: #9bc5ff; }
+        .no-messages { color: var(--text-muted); font-style: italic; font-size: 14px; text-align: center; padding: 20px 0; }
+
+        footer { display: flex; justify-content: space-between; background: var(--card-bg); padding: 12px 25px; border-radius: 12px; font-size: 14px; color: var(--text-muted); }
+        .status-dot { display: inline-block; width: 10px; height: 10px; background: var(--accent-green); border-radius: 50%; margin-right: 5px; }
+    </style>
+</head>
+<body class="login-mode">
+
+    <div class="login-screen" id="login-block">
+        <h2>Panel Pracownika</h2>
+        <p>Wirtualny Panel Przewozowy GAiT / ZTM.<br>Zaloguj się swoim ID, aby sprawdzić grafik.</p>
+        <input type="number" id="driver-input-id" placeholder="Wpisz ID służbowe">
+        <button class="btn-login" onclick="loginDriver()">Zaloguj się</button>
+    </div>
+
+    <div class="main-dashboard" id="dashboard-block">
+        <header>
+            <div class="bus-info">
+                <h1>GRAFIK TYGODNIOWY</h1>
+                <p>
+                    Kierowca: <span id="driver-name-display">---</span> 
+                    (ID: <span id="driver-id-display">---</span>) | 
+                    Wóz: <span id="driver-bus-display" style="font-weight: bold;">---</span> |
+                    Wystawił: <span id="dispatcher-signature-display" style="color: var(--accent-orange); font-weight: bold;">---</span>
+                    <button class="btn-logout" onclick="logoutDriver()">Wyloguj</button>
+                </p>
+            </div>
+            <div class="live-time" id="clock">00:00:00</div>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-title">📅 Twój Grafik Służb</div>
+                <table class="schedule-table">
+                    <thead>
+                        <tr><th>Dzień tygodnia</th><th>Linia</th><th>Trasa / Kierunek</th><th>Godziny pracy</th></tr>
+                    </thead>
+                    <tbody id="schedule-rows"></tbody>
+                </table>
+            </div>
+
+            <!-- TU BĘDĄ POJAWIAĆ SIĘ TWOJE KOMUNIKATY -->
+            <div class="card">
+                <div class="card-title">⚠️ Aktualne Komunikaty i Utrudnienia</div>
+                <div class="msg-container" id="live-messages-zone">
+                    <!-- Miejsce generowane automatycznie przez skrypt -->
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div><span class="status-dot"></span> System Live-Sync (Grafiki + Dyspozycja)</div>
+            <div>Wersja: v6.1.0 (Kierowca)</div>
+        </footer>
+    </div>
+
+    <script>
+        const daysOfWeek = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
+
+        function getBusDisplayStatus(busNum, targetDay) {
+            if (!busNum || busNum === "---") return "---";
+            const now = new Date();
+            const daysMap = {"Niedziela": 0, "Poniedziałek": 1, "Wtorek": 2, "Środa": 3, "Czwartek": 4, "Piątek": 5, "Sobota": 6};
+            return (now.getDay() === daysMap[targetDay]) ? busNum : "[WÓZ ZOSTANIE PRZYPISANY O 24:00 W DNIU SŁUŻBY]";
+        }
+
+        // --- FUNKCJA ŁADUJĄCA DYNAMICZNE KOMUNIKATY ---
+        function loadLiveMessages() {
+            const messagesList = JSON.parse(localStorage.getItem('dispatcherMessages')) || [];
+            const container = document.getElementById('live-messages-zone');
+            container.innerHTML = "";
+
+            if (messagesList.length === 0) {
+                container.innerHTML = `<div class="no-messages">Brak aktywnych komunikatów i utrudnień na liniach. Spokojnej służby!</div>`;
+                return;
+            }
+
+            messagesList.forEach(msg => {
+                const msgBox = document.createElement('div');
+                msgBox.className = `msg-box ${msg.type}`; // danger, warning lub info
+                msgBox.innerHTML = `<strong>[${msg.tag.toUpperCase()}] ${msg.title}:</strong> ${msg.content}`;
+                container.appendChild(msgBox);
+            });
+        }
+
+        function showDashboard(idInput) {
+            const driversRegistry = JSON.parse(localStorage.getItem('driversRegistry')) || {};
+            const systemDatabase = JSON.parse(localStorage.getItem('systemDatabase')) || {};
+            
+            document.getElementById('driver-id-display').textContent = idInput;
+            let driverData = systemDatabase[idInput];
+            const registeredName = driversRegistry[idInput] || "Kierowca (Brak wpisanej służby)";
+
+            if (!driverData) {
+                driverData = {
+                    name: registeredName, busNum: "---", activeDay: "", dispatcher: "BRAK",
+                    schedule: daysOfWeek.map(day => ({ date: day, line: "---", route: "WOLNE", hours: "---", current: false }))
+                };
+            } else if(driversRegistry[idInput]) {
+                driverData.name = driversRegistry[idInput];
+            }
+
+            document.getElementById('driver-name-display').textContent = driverData.name;
+            document.getElementById('dispatcher-signature-display').textContent = driverData.dispatcher;
+            document.getElementById('driver-bus-display').textContent = getBusDisplayStatus(driverData.busNum, driverData.activeDay);
+
+            const rowsContainer = document.getElementById('schedule-rows');
+            rowsContainer.innerHTML = "";
+            driverData.schedule.forEach(item => {
+                const tr = document.createElement('tr');
+                if (item.current) tr.className = "today";
+                tr.innerHTML = `<td>${item.date}</td><td><span style="background:${item.line !== '---' ? '#2a2a35' : 'transparent'}; padding:4px 8px; border-radius:4px; font-weight:bold;">${item.line}</span></td><td>${item.route}</td><td>${item.hours}</td>`;
+                rowsContainer.appendChild(tr);
+            });
+
+            loadLiveMessages(); // Wywołaj załadowanie ogłoszeń
+
+            document.body.classList.remove('login-mode');
+            document.getElementById('login-block').style.display = 'none';
+            document.getElementById('dashboard-block').style.display = 'flex';
+        }
+
+        function loginDriver() {
+            const idInput = document.getElementById('driver-input-id').value.trim();
+            if (!idInput) { alert("Wpisz swoje ID!"); return; }
+            localStorage.setItem('activeSessionDriverId', idInput);
+            showDashboard(idInput);
+        }
+
+        function logoutDriver() {
+            localStorage.removeItem('activeSessionDriverId');
+            document.body.classList.add('login-mode');
+            document.getElementById('login-block').style.display = 'block';
+            document.getElementById('dashboard-block').style.display = 'none';
+            document.getElementById('driver-input-id').value = "";
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0') + ":" + String(now.getSeconds()).padStart(2, '0');
+        }
+
+        window.onload = function() {
+            const sessionDriverId = localStorage.getItem('activeSessionDriverId');
+            if (sessionDriverId) showDashboard(sessionDriverId);
+            setInterval(updateClock, 1000);
+            updateClock();
+        };
+    </script>
+</body>
+</html>
