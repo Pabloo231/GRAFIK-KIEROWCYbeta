@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Dyspozytora - Zarządzanie v6.1</title>
+    <title>Panel Dyspozytora - Baza Live v1.1</title>
     <style>
         :root {
             --bg-color: #0c0c0e;
@@ -39,25 +39,26 @@
         .form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
         
-        .mini-msg-preview { font-size: 12px; padding: 10px; border-radius: 6px; background: #202026; margin-top: 10px; border-left: 3px solid #555; }
+        #msg-counter-preview { font-size:11px; margin-top:10px; color: var(--text-muted); }
     </style>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
-    <!-- BLOKADA PIN (Niezmiennie: 2580) -->
     <div class="lock-screen" id="auth-block">
-        <h2>🔒 Panel Dyspozytorski</h2>
+        <h2>🔒 Panel Dyspozytorski Live</h2>
         <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">Wprowadź kod autoryzacyjny dyspozytora:</p>
         <input type="password" id="pin-input" placeholder="••••" style="text-align:center; font-size: 20px; letter-spacing: 5px;" maxlength="4">
         <button class="btn" onclick="unlock()">Autoryzuj dostęp</button>
     </div>
 
-    <!-- WŁAŚCIWY PANEL -->
     <div class="main-panel" id="panel-block">
         <div class="panel-header">
             <div>
-                <h2>🛠️ Centrala Ruchu - Centrum Zarządzania Grafikami i Informacją</h2>
-                <p style="color: var(--text-muted); font-size: 13px;">Dodawaj służby, konfiguruj bazę pracowników i twórz komunikaty na żywo.</p>
+                <h2>🛠️ Centrala Ruchu OMSI 2 - Chmura Live Beta 1.1</h2>
+                <p style="color: var(--text-muted); font-size: 13px;">Dane zapisują się automatycznie w bazie i trafiają na telefony kierowców.</p>
             </div>
             <button class="btn" onclick="location.reload()" style="width:auto; background:#333; padding: 5px 15px;">Zablokuj panel</button>
         </div>
@@ -65,15 +66,13 @@
         <div class="panel-grid">
             
             <div class="panel-col">
-                <!-- LEWA SEKCOA 1: REJESTR KIEROWCÓW -->
                 <div class="card">
                     <h3>📇 Rejestr Pracowników (Przypisanie ID)</h3>
                     <label>ID Służbowe: <input type="number" id="reg-id" placeholder="np. 105"></label>
                     <label>Imię i Nazwisko kierowcy: <input type="text" id="reg-name" placeholder="Jan Kowalski"></label>
-                    <button class="btn" onclick="saveDriver()">Zapisz w bazie</button>
+                    <button class="btn" onclick="saveDriver()">Zapisz w chmurze sieciowej</button>
                 </div>
 
-                <!-- LEWA SEKCJA 2: MODUŁ GENEROWANIA KOMUNIKATÓW -->
                 <div class="card">
                     <h3 style="color: var(--accent-orange);">⚠️ Generator Komunikatów i Utrudnień (Live)</h3>
                     <div class="form-pair">
@@ -90,14 +89,13 @@
                     <label>Treść komunikatu: 
                         <textarea id="msg-content" rows="3" placeholder="Wpisz szczegóły objazdu lub utrudnienia..."></textarea>
                     </label>
-                    <button class="btn" style="background: var(--accent-orange);" onclick="addLiveMessage()">Opublikuj Komunikat</button>
+                    <button class="btn" style="background: var(--accent-orange);" onclick="addLiveMessage()">Opublikuj Komunikat sieciowo</button>
                     <button class="btn btn-red" onclick="clearAllMessages()">❌ Usuń wszystkie komunikaty</button>
                     
-                    <div id="msg-counter-preview" style="font-size:11px; margin-top:10px; color: var(--text-muted);"></div>
+                    <div id="msg-counter-preview">Łączenie z serwerem komunikatów...</div>
                 </div>
             </div>
 
-            <!-- PRAWA STRONA: GENERATOR GRAFIKÓW -->
             <div class="card">
                 <h3>📝 Generator Służb Tygodniowych</h3>
                 <div class="form-pair">
@@ -125,7 +123,7 @@
                 <label>Trasa przejazdu (Kierunek): 
                     <input type="text" id="disp-route" placeholder="Orunia Górna - Wały Piastowskie">
                 </label>
-                <button class="btn btn-green" onclick="saveSchedule()">Zatwierdź i Wystaw Grafik</button>
+                <button class="btn btn-green" onclick="saveSchedule()">Zatwierdź i Wyślij Grafik do sieci</button>
             </div>
         </div>
     </div>
@@ -134,18 +132,38 @@
         const PIN_SECRET = "2580";
         const daysOfWeek = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
 
+        // TWOJA KONFIGURACJA Z FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVzHQx3OkcLZ-RDwq4Asrd7NfszmhLtME",
+            authDomain: "gait-panel.firebaseapp.com",
+            databaseURL: "https://gait-panel-default-rtdb.firebaseio.com",
+            projectId: "gait-panel",
+            storageBucket: "gait-panel.appspot.com",
+            messagingSenderId: "164822494222",
+            appId: "1:164822494222:web:cc4b8e9d2465cc47efa05f"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         function unlock() {
             if(document.getElementById('pin-input').value === PIN_SECRET) {
                 document.getElementById('auth-block').style.display = 'none';
                 document.getElementById('panel-block').style.display = 'block';
-                updateMsgCounter();
+                observeMessages();
             } else {
                 alert("Błędny kod PIN!");
                 document.getElementById('pin-input').value = "";
             }
         }
 
-        // --- SKRYPTY OBSŁUGI KOMUNIKATÓW ---
+        function observeMessages() {
+            database.ref('dispatcherMessages').on('value', (snapshot) => {
+                const data = snapshot.val() || [];
+                document.getElementById('msg-counter-preview').innerText = `Obecnie na serwerze wyświetla się komunikatów: ${data.length}`;
+            });
+        }
+
         function addLiveMessage() {
             const type = document.getElementById('msg-type').value;
             const tag = document.getElementById('msg-tag').value.trim() || "INFO";
@@ -154,52 +172,45 @@
 
             if (!title || !content) return alert("Wprowadź tytuł i treść ogłoszenia!");
 
-            const messagesList = JSON.parse(localStorage.getItem('dispatcherMessages')) || [];
-            
-            // Dodanie nowej wiadomości na początek tablicy
-            messagesList.unshift({ type, tag, title, content });
-            localStorage.setItem('dispatcherMessages', JSON.stringify(messagesList));
-
-            alert("Komunikat został opublikowany i pojawi się na tablicach kierowców!");
-            
-            document.getElementById('msg-tag').value = "";
-            document.getElementById('msg-title').value = "";
-            document.getElementById('msg-content').value = "";
-            updateMsgCounter();
+            database.ref('dispatcherMessages').once('value').then((snapshot) => {
+                const messagesList = snapshot.val() || [];
+                messagesList.unshift({ type, tag, title, content });
+                
+                database.ref('dispatcherMessages').set(messagesList, (error) => {
+                    if(error) { alert("Błąd zapisu w chmurze!"); } else {
+                        alert("Komunikat został opublikowany w sieci!");
+                        document.getElementById('msg-tag').value = "";
+                        document.getElementById('msg-title').value = "";
+                        document.getElementById('msg-content').value = "";
+                    }
+                });
+            });
         }
 
         function clearAllMessages() {
-            if(confirm("Czy na pewno chcesz usunąć ze strony głównej WSZYSTKIE aktualne komunikaty?")) {
-                localStorage.removeItem('dispatcherMessages');
-                alert("Wyczyszczono tablicę komunikatów.");
-                updateMsgCounter();
+            if(confirm("Czy na pewno chcesz skasować komunikaty z chmury?")) {
+                database.ref('dispatcherMessages').remove().then(() => {
+                    alert("Wyczyszczono tablicę w sieci.");
+                });
             }
         }
 
-        function updateMsgCounter() {
-            const messagesList = JSON.parse(localStorage.getItem('dispatcherMessages')) || [];
-            document.getElementById('msg-counter-preview').innerText = `Obecnie na stronie wyświetla się komunikatów: ${messagesList.length}`;
-        }
-
-        // --- SKRYPTY GRAFIKU ---
         function saveDriver() {
-            const driversRegistry = JSON.parse(localStorage.getItem('driversRegistry')) || {};
             const id = document.getElementById('reg-id').value.trim();
             const name = document.getElementById('reg-name').value.trim();
 
             if(!id || !name) return alert("Uzupełnij ID oraz nazwisko!");
-            driversRegistry[id] = name;
-            localStorage.setItem('driversRegistry', JSON.stringify(driversRegistry));
-            
-            alert(`Zapisano pomyślnie ID ${id} dla: ${name}`);
-            document.getElementById('reg-id').value = "";
-            document.getElementById('reg-name').value = "";
+
+            database.ref('driversRegistry/' + id).set(name, (error) => {
+                if(error) { alert("Błąd serwera!"); } else {
+                    alert(`Zapisano w chmurze: ID ${id} -> ${name}`);
+                    document.getElementById('reg-id').value = "";
+                    document.getElementById('reg-name').value = "";
+                }
+            });
         }
 
         function saveSchedule() {
-            const driversRegistry = JSON.parse(localStorage.getItem('driversRegistry')) || {};
-            const systemDatabase = JSON.parse(localStorage.getItem('systemDatabase')) || {};
-
             const id = document.getElementById('disp-id').value.trim();
             const day = document.getElementById('disp-day').value;
             const line = document.getElementById('disp-line').value.trim();
@@ -210,23 +221,33 @@
 
             if(!id || !line || !bus) return alert("Wypełnij pola: ID, Linia oraz Wóz!");
 
-            const name = driversRegistry[id] || `Kierowca o ID: ${id}`;
-            const schedule = daysOfWeek.map(d => ({
-                date: d === day ? `${d} [SŁUŻBA]` : d,
-                line: d === day ? line : "---",
-                route: d === day ? route : "WOLNE",
-                hours: d === day ? hours : "---",
-                current: d === day
-            }));
+            database.ref('driversRegistry/' + id).once('value').then((snapshot) => {
+                const name = snapshot.val() || `Kierowca o ID: ${id}`;
+                
+                const schedule = daysOfWeek.map(d => ({
+                    date: d === day ? `${d} [SŁUŻBA]` : d,
+                    line: d === day ? line : "---",
+                    route: d === day ? route : "WOLNE",
+                    hours: d === day ? hours : "---",
+                    current: d === day
+                }));
 
-            systemDatabase[id] = { name: name, busNum: bus, activeDay: day, dispatcher: sig, schedule: schedule };
-            localStorage.setItem('systemDatabase', JSON.stringify(systemDatabase));
-
-            alert(`Grafik dla ID ${id} na ${day} został zaktualizowany!`);
-            document.getElementById('disp-id').value = "";
-            document.getElementById('disp-line').value = "";
-            document.getElementById('disp-bus').value = "";
-            document.getElementById('disp-route').value = "";
+                database.ref('systemDatabase/' + id).set({
+                    name: name,
+                    busNum: bus,
+                    activeDay: day,
+                    dispatcher: sig,
+                    schedule: schedule
+                }, (error) => {
+                    if(error) { alert("Błąd wysyłania grafiku!"); } else {
+                        alert(`Grafik dla ID ${id} wysłany pomyślnie na serwer!`);
+                        document.getElementById('disp-id').value = "";
+                        document.getElementById('disp-line').value = "";
+                        document.getElementById('disp-bus').value = "";
+                        document.getElementById('disp-route').value = "";
+                    }
+                });
+            });
         }
     </script>
 </body>
