@@ -3,11 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Kierowcy - Grafik Live v1.1</title>
+    <title>Panel Pracownika - Grafik</title>
     <style>
+        
+        /* Grafik w formie siatki */
+#days-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+/* GŁÓWNY UKŁAD SIATKI - TO MUSI BYĆ JEDYNA DEFINICJA TYCH ELEMENTÓW */
+#days-container, #live-messages-container {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 15px !important;
+    overflow: visible !important; /* To usuwa suwak */
+    margin-top: 15px;
+}
+/* Ogłoszenia w formie siatki */
+.msg-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+        #days-container { 
+    display: flex; 
+    gap: 15px; 
+    overflow-x: auto; 
+    padding-bottom: 15px; 
+    margin-bottom: 25px;
+}
+
+/* Wymuszenie stałej szerokości kafelków grafiku */
+.day-block { 
+    min-width: 250px; /* Dzięki temu zawsze będą obok siebie */
+    background: #1c1c22; 
+    border: 1px solid #282833; 
+    border-radius: 8px; 
+    padding: 15px; 
+}
+
+/* Tablica ogłoszeń - układ poziomy */
+.msg-list { 
+    display: flex; 
+    gap: 15px; 
+    overflow-x: auto; 
+    padding-bottom: 15px; 
+}
+
+.logout-btn {
+    background-color: #3d3d4a; /* Ciemne tło */
+    color: #e0e0e0;           /* Jasny tekst */
+    border: 1px solid #555;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease; /* Płynna animacja */
+    margin-top: 10px;
+}
+
+.logout-btn:hover {
+    background-color: #e74c3c; /* Czerwony kolor po najechaniu */
+    color: white;
+    border-color: #e74c3c;
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.4);
+}
+/* Wymuszenie szerokości ogłoszeń, żeby nie były "ściśnięte" */
+.msg-item { 
+    min-width: 320px; /* Każde ogłoszenie ma min. 320px szerokości */
+    padding: 15px; 
+    border-radius: 8px; 
+    background: #202026; 
+    border-left: 4px solid #555; 
+}
+/* Wspólny styl dla kafelków */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Styl pojedynczego kafelka (dla grafiku i ogłoszeń) */
+.tile-block {
+    background: #1c1c22;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #282833;
+    color: #e0e0e0;
+}
+/* Kontener grafiku - wymusza jedną linię */
+#days-container {
+    display: flex !important;
+    flex-direction: row !important; /* Poziomo */
+    flex-wrap: nowrap !important;    /* NIE ŁAM LINI */
+    gap: 15px !important;
+    overflow-x: hidden !important;   /* UKRYWA PASEK PRZEWIJANIA */
+    width: 100% !important;
+    padding-bottom: 10px;
+}
+
+/* Kafelki - muszą się skurczyć, żeby zmieścić się w jednym rzędzie */
+.tile-block {
+    flex: 0 0 calc(100% / 7 - 13px); /* 100% dzielone na 7 dni minus przerwy */
+    min-width: 100px; /* Minimalna szerokość, żeby tekst był czytelny */
+    background: #1c1c22;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #282833;
+}
+
         :root {
             --bg-color: #0c0c0e;
-            --card-bg: #16161a;
+            --card-bg: rgba(22, 22, 26, 0.95);
+            --card-logged: #16161a;
             --text-main: #ffffff;
             --text-muted: #a0a0a8;
             --accent-blue: #2f80ed;
@@ -16,96 +127,106 @@
             --accent-red: #eb5757;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
         
-        .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        .card { background: var(--card-bg); border: 1px solid #23232a; padding: 20px; border-radius: 12px; }
+        body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; padding: 20px; }
+        body.autobus-bg { background: linear-gradient(rgba(12, 12, 14, 0.75), rgba(12, 12, 14, 0.85)), url('tlo.jpg') no-repeat center center fixed; background-size: cover; }
+        
+        .login-screen { max-width: 500px; margin: 80px auto 0 auto; display: block; }
+        .dashboard-screen { max-width: 1200px; margin: 0 auto; display: none; }
+        
+        .card { background: var(--card-bg); border: 1px solid #23232a; padding: 25px; border-radius: 12px; backdrop-filter: blur(8px); margin-bottom: 20px; }
+        .dashboard-screen .card { background: var(--card-logged); backdrop-filter: none; }
         
         .header { text-align: center; padding: 20px 0; }
-        .header h1 { font-size: 24px; margin-bottom: 5px; }
-        .header p { color: var(--text-muted); font-size: 14px; }
+        .header h1 { font-size: 26px; margin-bottom: 5px; font-weight: 800; letter-spacing: 0.5px; }
+        .header p { color: var(--text-muted); font-size: 13px; }
         
-        .search-box { display: flex; gap: 10px; margin-bottom: 10px; }
+        .search-box { display: flex; gap: 10px; margin-top: 15px; }
         input { flex: 1; padding: 14px; background: #202026; border: 1px solid #3d3d4e; border-radius: 8px; color: white; font-size: 16px; outline: none; }
         input:focus { border-color: var(--accent-blue); }
-        
         .btn { background: var(--accent-blue); color: white; border: none; padding: 14px 24px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; }
         
-        .msg-board h3 { color: var(--accent-orange); font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; }
+        .btn-logout { background: #3d3d4e; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px; }
+        .btn-logout:hover { background: #4d4d5e; }
+        
+        .main-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
+        @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } }
+        
+        .column-title { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        
         .msg-list { display: flex; flex-direction: column; gap: 15px; }
         .msg-item { padding: 15px; border-radius: 8px; background: #202026; border-left: 4px solid #555; }
-        .msg-item.danger { border-left-color: var(--accent-red); background: rgba(235, 87, 87, 0.05); }
-        .msg-item.warning { border-left-color: var(--accent-orange); background: rgba(242, 153, 74, 0.05); }
-        .msg-item.info { border-left-color: var(--accent-blue); background: rgba(47, 128, 237, 0.05); }
+        .msg-item.danger { border-left-color: var(--accent-red); background: rgba(235, 87, 87, 0.03); }
+        .msg-item.warning { border-left-color: var(--accent-orange); background: rgba(242, 153, 74, 0.03); }
+        .msg-item.info { border-left-color: var(--accent-blue); background: rgba(47, 128, 237, 0.03); }
         .msg-tag { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; display: inline-block; margin-bottom: 5px; }
-        .msg-item.danger .msg-tag { background: var(--accent-red); }
-        .msg-item.warning .msg-tag { background: var(--accent-orange); }
-        .msg-item.info .msg-tag { background: var(--accent-blue); }
         .msg-title { font-weight: bold; font-size: 15px; margin-bottom: 3px; }
         .msg-text { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
         
-        .schedule-zone { display: none; }
-        .driver-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 15px; }
-        .driver-info h2 { font-size: 20px; }
-        .driver-info span { font-size: 14px; color: var(--text-muted); }
+        .driver-top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d2d3a; padding-bottom: 15px; margin-bottom: 20px; }
+        .driver-top-bar h2 { font-size: 22px; color: #ffffff; }
         
-        .day-row { display: flex; flex-direction: column; padding: 15px; border-radius: 8px; background: #1c1c22; margin-bottom: 10px; border: 1px solid #282833; }
-        .day-row.active { border-color: var(--accent-green); background: rgba(39, 174, 96, 0.05); }
-        .day-top { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; font-size: 15px; }
-        .day-top .day-name { color: var(--text-main); }
-        .day-row.active .day-top .day-name { color: var(--accent-green); }
-        .day-top .line-badge { background: #2d2d3a; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
-        .day-row.active .day-top .line-badge { background: var(--accent-green); color: white; }
-        .day-details { font-size: 13px; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .day-block { background: #1c1c22; border: 1px solid #282833; border-radius: 8px; padding: 15px; margin-bottom: 12px; }
+        .day-block.active { border-color: var(--accent-green); background: rgba(39, 174, 96, 0.04); }
+        .day-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; border-bottom: 1px solid #2d2d3a; padding-bottom: 8px; margin-bottom: 10px; }
+        .line-num { background: #2f80ed; padding: 2px 8px; border-radius: 4px; font-size: 12px; color: white; }
+        .day-block.active .line-num { background: var(--accent-green); }
+        
+        .day-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text-muted); }
+        .day-body strong { color: white; }
+        .beta-footer { text-align: center; font-size: 11px; color: var(--text-muted); padding: 30px 0 10px 0; text-transform: uppercase; }
+        
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
-<body>
+<body class="autobus-bg">
 
-    <div class="container">
-        
-        <div class="header">
-            <h1>🚏 Wirtualna Zajezdnia OMSI 2</h1>
-            <p>System Informacji i Harmonogramów Pracy Kierowców</p>
-        </div>
-
+    <div class="login-screen" id="view-login">
+        <div class="header"><h1>Panel Pracownika v1.0 </h1></div>
         <div class="card">
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">Podaj swój numer identyfikacyjny kierowcy:</p>
-            <div class="search-box">
-                <input type="number" id="driver-id-input" placeholder="Wpisz ID (np. 105)">
-                <button class="btn" onclick="checkScheduleLive()">Sprawdź grafik</button>
+            <input type="number" id="driver-id-input" placeholder="Wpisz ID" style="width:100%; margin-bottom:10px;">
+            <button class="btn" style="width:100%" onclick="checkScheduleLive()">Zaloguj</button>
+        </div>
+    </div>
+<div id="view-dashboard" style="display:none;">
+    <div class="card">
+        <h2 id="driver-name-display"></h2>
+        <div id="bus-display"></div> <button class="logout-btn" onclick="logout()">Wyloguj się</button>
+    </div>
+    
+    <h3>Grafik</h3>
+<div id="days-container"></div>
+
+<h3>Tablica Ogłoszeń</h3>
+<div id="live-messages-container"></div>
+</div>
+
+    <div id="days-container"></div>
+</div>
+    <div class="dashboard-screen" id="view-dashboard" style="display:none;">
+    <div class="card">
+        <h2 id="driver-name-display">Kierowca</h2>
+        <div id="bus-display"></div>
+        <button class="logout-btn" onclick="logout()">Wyloguj się</button>
+    </div>
+
+    <h3>📅 Grafik</h3>
+    <div id="days-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <h3>⚠️ Tablica Ogłoszeń</h3>
+    <div id="live-messages-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+</div>
+
             </div>
         </div>
 
-        <div class="card msg-board">
-            <h3>⚠️ Bieżące komunikaty i utrudnienia ruchu</h3>
-            <div class="msg-list" id="live-messages-container">
-                <div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 10px;">Brak aktualnych komunikatów na sieci. Spokojnej służby!</div>
-            </div>
-        </div>
-
-        <div class="card schedule-zone" id="schedule-block">
-            <div class="driver-info">
-                <div>
-                    <h2 id="driver-name-display">Kierowca</h2>
-                    <span id="dispatcher-signature">Dyspozytor</span>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 11px; color: var(--text-muted);">Stały wóz:</div>
-                    <div id="bus-display" style="font-weight: bold; color: var(--accent-blue); font-size: 18px;">#---</div>
-                </div>
-            </div>
-
-            <div id="days-container">
-                </div>
-        </div>
-
+            
+                            <div class="beta-footer">⚙️ Panel Pracownika Beta 1.0</div>
     </div>
 
     <script>
-        // TWOJA KONFIGURACJA Z FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBVzHQx3OkcLZ-RDwq4Asrd7NfszmhLtME",
             authDomain: "gait-panel.firebaseapp.com",
@@ -115,68 +236,71 @@
             messagingSenderId: "164822494222",
             appId: "1:164822494222:web:cc4b8e9d2465cc47efa05f"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // AUTOMATYCZNE POBIERANIE KOMUNIKATÓW NA ŻYWO Z CHMURY
+        // Obsługa tablicy ogłoszeń
         database.ref('dispatcherMessages').on('value', (snapshot) => {
             const messages = snapshot.val() || [];
             const container = document.getElementById('live-messages-container');
-            
-            if (messages.length === 0) {
-                container.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 10px;">Brak aktualnych komunikatów na sieci. Spokojnej służby!</div>`;
-                return;
-            }
-
-            container.innerHTML = messages.map(msg => `
+            container.innerHTML = messages.length === 0 
+                ? `<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 10px;">Brak komunikatów.</div>`
+                : messages.map(msg => `
                 <div class="msg-item ${msg.type}">
                     <span class="msg-tag">${msg.tag}</span>
                     <div class="msg-title">${msg.title}</div>
                     <div class="msg-text">${msg.content}</div>
-                </div>
-            `).join('');
+                </div>`).join('');
         });
 
-        // SPRAWDZANIE GRAFIKU W BAZIE ONLINE
-        function checkScheduleLive() {
-            const id = document.getElementById('driver-id-input').value.trim();
-            if (!id) return alert("Wpisz swoje ID!");
-
-            database.ref('systemDatabase/' + id).once('value').then((snapshot) => {
-                const driverData = snapshot.val();
-                const block = document.getElementById('schedule-block');
-
-                if (!driverData) {
-                    alert("Nie znaleziono grafiku dla podanego ID. Skontaktuj się z dyspozytorem!");
-                    block.style.display = "none";
-                    return;
-                }
-
-                document.getElementById('driver-name-display').innerText = driverData.name;
-                document.getElementById('dispatcher-signature').innerText = `Wystawił: ${driverData.dispatcher || 'Dyspozytor Dyżurny'}`;
-                document.getElementById('bus-display').innerText = driverData.busNum || '#---';
-
-                const daysHtml = driverData.schedule.map(day => `
-                    <div class="day-row ${day.current ? 'active' : ''}">
-                        <div class="day-top">
-                            <span class="day-name">${day.date}</span>
-                            <span class="line-badge">Linia: ${day.line}</span>
-                        </div>
-                        <div class="day-details">
-                            <div>🕒 Godziny: <strong>${day.hours}</strong></div>
-                            <div>🗺️ Kierunek: <strong>${day.route}</strong></div>
-                        </div>
-                    </div>
-                `).join('');
-
-                document.getElementById('days-container').innerHTML = daysHtml;
-                block.style.display = "block";
-                
-                // Płynne przewinięcie do grafiku na telefonach
-                block.scrollIntoView({ behavior: 'smooth' });
-            });
+        function logout() {
+            document.body.classList.add('autobus-bg');
+            document.getElementById('view-login').style.display = 'block';
+            document.getElementById('view-dashboard').style.display = 'none';
         }
+
+        function checkScheduleLive() {
+    const id = document.getElementById('driver-id-input').value.trim();
+    if (!id) return alert("Wpisz ID!");
+    
+    database.ref('systemDatabase/' + id).once('value').then((snapshot) => {
+        const d = snapshot.val();
+        if (!d) return alert("Nie znaleziono danych!");
+        
+        document.getElementById('view-login').style.display = 'none';
+        document.getElementById('view-dashboard').style.display = 'block';
+        
+        // Nagłówek: Imię po lewej, Wóz po prawej
+        document.getElementById('driver-name-display').innerText = d.name;
+        document.getElementById('bus-display').innerHTML = `<strong>Stały wóz: ${d.busNum || "---"}</strong>`;
+
+        // 1. Grafik
+        const container = document.getElementById('days-container');
+        container.innerHTML = d.schedule.map(day => {
+            const isWorking = (day.line && day.line !== '---');
+            const cleanDate = day.date.replace(/\[.*?\]/g, '').trim();
+            
+            return `
+            <div class="day-block ${day.current ? 'active' : ''}">
+                <div class="day-header"><span>${cleanDate}</span></div>
+                <div class="day-body">
+                    ${isWorking ? `<div>🕒 ${day.hours}</div><div>🚌 Wóz: ${day.dayBus || d.busNum}</div><div style="color: #27ae60;">Linia: ${day.line}</div>` : '<div>Wolne</div>'}
+                </div>
+            </div>`;
+        }).join('');
+
+        // 2. Ogłoszenia (siatka)
+        database.ref('announcements').once('value').then((snap) => {
+            const msgs = snap.val();
+            const msgContainer = document.getElementById('live-messages-container');
+            if (msgs) {
+                msgContainer.innerHTML = Object.values(msgs).map(m => `
+                    <div class="msg-block"><h3>${m.title}</h3><p>${m.content}</p></div>
+                `).join('');
+            }
+        });
+    });
+}
     </script>
 </body>
 </html>
