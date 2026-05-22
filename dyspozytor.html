@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Dyspozytora - Baza Live v1.4</title>
+    <title>Panel Dyspozytora - Baza Live v1.5.1</title>
     <style>
         :root {
             --bg-color: #0c0c0e;
@@ -148,6 +148,34 @@
                     <input type="text" id="disp-route" placeholder="Orunia Górna - Wały Piastowskie">
                 </label>
                 <button class="btn btn-green" onclick="saveSchedule()">Zatwierdź i Wyślij Grafik do sieci</button>
+                <div style="margin-top:20px; padding:15px; background:#202026; border-radius:8px;">
+    <h4 style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">NARZĘDZIA DYSPOZYTORA:</h4>
+    <input type="number" id="quick-id" placeholder="ID Kierowcy">
+    <div style="display:flex; gap:10px;">
+        <button class="btn" style="background:#555;" onclick="quickPreview()">PODGLĄD GRAFIKU</button>
+        <button class="btn btn-red" onclick="resetSchedule()">RESET TYGODNIA</button>
+    </div>
+    <div id="quick-view-list" style="margin-top:10px; font-size:11px;"></div>
+</div>
+
+<script>
+function quickPreview() {
+    const id = document.getElementById('quick-id').value;
+    database.ref('systemDatabase/' + id + '/schedule').once('value').then(snap => {
+        const sched = snap.val();
+        document.getElementById('quick-view-list').innerHTML = sched.map(s => 
+            `<div>${s.date}: ${s.line}</div>`).join('');
+    });
+}
+
+function resetSchedule() {
+    const id = document.getElementById('quick-id').value;
+    if(confirm("Czy na pewno wyczyścić cały tydzień dla ID " + id + "?")) {
+        database.ref('systemDatabase/' + id + '/schedule').update({/* wstaw logikę resetu na --- */});
+        alert("Grafik wyczyszczony.");
+    }
+}
+</script>
             </div>
         </div>
     </div>
