@@ -238,6 +238,29 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // Zamiast renderowania tabeli, wklej ten kod w funkcji, która wyświetla grafik:
+const container = document.getElementById('tu-wstaw-id-twojego-kontenera'); // Zmień na ID swojego kontenera
+let html = '';
+
+schedArray.forEach(s => {
+    // Sprawdzamy czy dany dzień to służba czy wolne
+    const isWorking = s.line && s.line !== "---";
+    
+    html += `
+    <div style="background:#202026; padding:15px; margin-bottom:10px; border-radius:8px; border-left: 5px solid ${isWorking ? '#27ae60' : '#444'}; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+        <div style="font-size:17px; font-weight:bold; color:white; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:8px;">
+            ${s.date ? s.date.split(' ')[0] : '---'}
+        </div>
+        <div style="font-size:14px; color:#ccc;">
+            Linia: <span style="color:white; font-weight:bold;">${s.line || '---'}</span><br>
+            Wóz: <span style="color:white;">${s.dayBus || '---'}</span><br>
+            Trasa: <span style="color:white;">${s.route || '---'}</span>
+        </div>
+    </div>`;
+});
+
+container.innerHTML = html;
+
         // Obsługa tablicy ogłoszeń
         database.ref('dispatcherMessages').on('value', (snapshot) => {
             const messages = snapshot.val() || [];
@@ -303,3 +326,4 @@
     </script>
 </body>
 </html>
+
