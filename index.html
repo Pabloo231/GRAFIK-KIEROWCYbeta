@@ -52,6 +52,14 @@
     padding-bottom: 15px; 
 }
 
+.scroll-container {
+    width: 100%;
+    overflow-x: auto; /* Włącza przewijanie w poziomie */
+    -webkit-overflow-scrolling: touch; /* Dodaje płynność na iPhone/Android */
+    white-space: nowrap; /* Zapobiega łamaniu linii wewnątrz tabeli */
+    padding-bottom: 10px;
+}
+
 .logout-btn {
     background-color: #3d3d4a; /* Ciemne tło */
     color: #e0e0e0;           /* Jasny tekst */
@@ -94,15 +102,27 @@
     border: 1px solid #282833;
     color: #e0e0e0;
 }
-/* Kontener grafiku - wymusza jedną linię */
+
+/* Kontener musi mieć flex i overflow-x, aby przewijać się w poziomie */
 #days-container {
     display: flex !important;
-    flex-direction: row !important; /* Poziomo */
-    flex-wrap: nowrap !important;    /* NIE ŁAM LINI */
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important; /* TO WŁĄCZA PRZEWIJANIE */
     gap: 15px !important;
-    overflow-x: hidden !important;   /* UKRYWA PASEK PRZEWIJANIA */
+    padding-bottom: 20px;
     width: 100% !important;
-    padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch; /* Płynne przewijanie na iPhone */
+}
+
+/* Kafelki muszą mieć stałą szerokość, żeby nie znikały */
+.day-block {
+    flex: 0 0 250px !important; /* Stała szerokość 250px dla każdego dnia */
+    min-width: 250px !important;
+    background: #1c1c22;
+    border: 1px solid #282833;
+    border-radius: 8px;
+    padding: 15px;
 }
 
 /* Kafelki - muszą się skurczyć, żeby zmieścić się w jednym rzędzie */
@@ -183,7 +203,7 @@
 </head>
 <body class="autobus-bg">
     <div class="login-screen" id="view-login">
-        <div class="header"><h1>Panel Pracownika v1.0 </h1></div>
+        <div class="header"><h1>Panel Pracownika v1.1 </h1></div>
         <div class="card">
             <input type="number" id="driver-id-input" placeholder="Wpisz ID" style="width:100%; margin-bottom:10px;">
             <button class="btn" style="width:100%" onclick="checkScheduleLive()">Zaloguj</button>
@@ -211,8 +231,9 @@
         <button class="logout-btn" onclick="logout()">Wyloguj się</button>
     </div>
 
+    <div class="dashboard-screen" id="view-dashboard" style="display:none;">
     <h3>📅 Grafik</h3>
-    <div id="days-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    <div id="days-container"></div> </div>
 
     <h3>⚠️ Tablica Ogłoszeń</h3>
     <div id="live-messages-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
