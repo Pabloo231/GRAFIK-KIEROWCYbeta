@@ -128,25 +128,21 @@
             </div>
 
             <div class="card">
-                <h3>📝 Generator Służb Tygodniowych</h3>
-                <div class="form-pair">
-                    <label>ID Kierowcy: <input type="number" id="disp-id" placeholder="np. 105"></label>
-                    <label>Dzień tygodnia: 
-                        <select id="disp-day">
-                            <option value="Poniedziałek">Poniedziałek</option>
-                            <option value="Wtorek">Wtorek</option>
-                            <option value="Środa">Środa</option>
-                            <option value="Czwartek">Czwartek</option>
-                            <option value="Piątek">Piątek</option>
-                            <option value="Sobota">Sobota</option>
-                            <option value="Niedziela">Niedziela</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="form-pair">
-                    <label>Numer Linii: <input type="text" id="disp-line" placeholder="np. 154"></label>
-                    <label>Godziny pracy: <input type="text" id="disp-hours" placeholder="04:15 - 12:30"></label>
-                </div>
+    <h3>📝 Generator Służb Tygodniowych</h3>
+    <label>ID Pracownika: <input type="number" id="disp-id"></label>
+    <label>Dzień: 
+        <select id="disp-day">
+            <option>Poniedziałek</option><option>Wtorek</option><option>Środa</option>
+            <option>Czwartek</option><option>Piątek</option><option>Sobota</option><option>Niedziela</option>
+        </select>
+    </label>
+    <label>Linia: <input type="text" id="disp-line"></label>
+    <label>Uwagi: <input type="text" id="disp-notes" placeholder="np. Zjazd do zajezdni"></label>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-green" style="flex:2" onclick="saveSchedule()">Zaktualizuj</button>
+        <button class="btn btn-red" style="flex:1" onclick="deleteDaySchedule()">Usuń</button>
+    </div>
+</div>
                 <div class="form-pair">
                     <label style="grid-column: span 2; color: var(--accent-orange);">
                         Wóz na ten dzień (Zastępczy / Opcjonalnie):
@@ -440,29 +436,47 @@ function resetSchedule() {
     const notes = document.getElementById('disp-notes').value.trim();
 
     if(!id) return alert("Wpisz ID!");
-
     database.ref('systemDatabase/' + id).once('value').then(snap => {
         let data = snap.val();
+        if(!data || !data.schedule) return alert("Brak pracownika!");
         
-        // Jeśli dane pracownika nie istnieją w ogóle
-        if(!data) return alert("Pracownik o tym ID nie istnieje w bazie!");
-        
-        // Jeśli nie ma grafiku, stwórzmy domyślną tablicę 7 dni
-        if(!data.schedule) {
-            data.schedule = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"]
-                .map(d => ({ date: d, line: "---", route: "WOLNE", hours: "---" }));
-        }
-
-        // Teraz bezpiecznie mapujemy grafik
         data.schedule = data.schedule.map(s => {
             if(s.date.startsWith(day)) return {...s, line: line, route: notes, current: true};
             return s;
         });
-        
         database.ref('systemDatabase/' + id).update({schedule: data.schedule});
-        alert("Zaktualizowano grafik dla: " + day);
+        alert("Zaktualizowano dzień: " + day);
     });
 }
+                
+                // Pobieramy stare dane grafiku, aby zachować przydziały wozów z innych dni
+                database.ref('systemDatabase/' + id).once('value').then((oldSchedSnap) => {
+                    const oldData = oldSchedSnap.val();
+                    
+                    const schedule = daysOfWeek.map(d => {
+                        if (d === day) {
+                            // Dzień aktualnie generowany: jeśli wpisano customBus to go użyj, jeśli nie - użyj stałego wozu
+                            return {
+                                date: `${d} [SŁUŻBA]`,
+                                line: line,
+                                route: route,
+                                hours: hours,
+                                dayBus: customBus || defaultBus, // Przypisanie dedykowanego wozu na ten dzień
+                                current: true
+                            };
+                        } else {
+                            // Przepisywanie innych dni lub tworzenie czystych
+                            let existingDay = oldData && oldData.schedule ? oldData.schedule.find(x => x.date.startsWith(d)) : null;
+                            return {
+                                date: existingDay ? existingDay.date : d,
+                                line: existingDay ? existingDay.line : "---",
+                                route: existingDay ? existingDay.route : "WOLNE",
+                                hours: existingDay ? existingDay.hours : "---",
+                                dayBus: existingDay ? (existingDay.dayBus || defaultBus) : defaultBus,
+                                current: false
+                            };
+                        }
+                    });
 
                     database.ref('systemDatabase/' + id).set({
                         name: name,
@@ -479,6 +493,9 @@ function resetSchedule() {
                             document.getElementById('disp-route').value = "";
                         }
                     });
+                });
+            });
+        }
     </script>
 </body>
 </html>
