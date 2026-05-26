@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Dyspozytora</title>
+    <title>Panel Dyspozytora Wersja Beta </title>
     <style>
 
        /* Stylizacja tabeli grafiku */
@@ -434,49 +434,35 @@ function resetSchedule() {
         }
 
         function saveSchedule() {
-            const id = document.getElementById('disp-id').value.trim();
-            const day = document.getElementById('disp-day').value;
-            const line = document.getElementById('disp-line').value.trim();
-            const hours = document.getElementById('disp-hours').value.trim() || "06:00 - 14:00";
-            const customBus = document.getElementById('disp-custom-bus').value.trim(); // Nowe pole wozu zastępczego
-            const sig = document.getElementById('disp-sig').value.trim() || "Dyspozytor";
-            const route = document.getElementById('disp-route').value.trim() || "Trasa zadana";
+    const id = document.getElementById('disp-id').value.trim();
+    const day = document.getElementById('disp-day').value;
+    const line = document.getElementById('disp-line').value.trim();
+    const notes = document.getElementById('disp-notes').value.trim();
 
-            if(!id || !line) return alert("Wypełnij ID oraz Linię!");
+    if(!id) return alert("Wpisz ID!");
 
-            database.ref('driversRegistry/' + id).once('value').then((snapshot) => {
-                const regData = snapshot.val();
-                const name = regData ? regData.name : `Kierowca o ID: ${id}`;
-                const defaultBus = regData ? regData.bus : "Brak wozu";
-                
-                // Pobieramy stare dane grafiku, aby zachować przydziały wozów z innych dni
-                database.ref('systemDatabase/' + id).once('value').then((oldSchedSnap) => {
-                    const oldData = oldSchedSnap.val();
-                    
-                    const schedule = daysOfWeek.map(d => {
-                        if (d === day) {
-                            // Dzień aktualnie generowany: jeśli wpisano customBus to go użyj, jeśli nie - użyj stałego wozu
-                            return {
-                                date: `${d} [SŁUŻBA]`,
-                                line: line,
-                                route: route,
-                                hours: hours,
-                                dayBus: customBus || defaultBus, // Przypisanie dedykowanego wozu na ten dzień
-                                current: true
-                            };
-                        } else {
-                            // Przepisywanie innych dni lub tworzenie czystych
-                            let existingDay = oldData && oldData.schedule ? oldData.schedule.find(x => x.date.startsWith(d)) : null;
-                            return {
-                                date: existingDay ? existingDay.date : d,
-                                line: existingDay ? existingDay.line : "---",
-                                route: existingDay ? existingDay.route : "WOLNE",
-                                hours: existingDay ? existingDay.hours : "---",
-                                dayBus: existingDay ? (existingDay.dayBus || defaultBus) : defaultBus,
-                                current: false
-                            };
-                        }
-                    });
+    database.ref('systemDatabase/' + id).once('value').then(snap => {
+        let data = snap.val();
+        
+        // Jeśli dane pracownika nie istnieją w ogóle
+        if(!data) return alert("Pracownik o tym ID nie istnieje w bazie!");
+        
+        // Jeśli nie ma grafiku, stwórzmy domyślną tablicę 7 dni
+        if(!data.schedule) {
+            data.schedule = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"]
+                .map(d => ({ date: d, line: "---", route: "WOLNE", hours: "---" }));
+        }
+
+        // Teraz bezpiecznie mapujemy grafik
+        data.schedule = data.schedule.map(s => {
+            if(s.date.startsWith(day)) return {...s, line: line, route: notes, current: true};
+            return s;
+        });
+        
+        database.ref('systemDatabase/' + id).update({schedule: data.schedule});
+        alert("Zaktualizowano grafik dla: " + day);
+    });
+}
 
                     database.ref('systemDatabase/' + id).set({
                         name: name,
@@ -493,9 +479,6 @@ function resetSchedule() {
                             document.getElementById('disp-route').value = "";
                         }
                     });
-                });
-            });
-        }
     </script>
 </body>
 </html>
