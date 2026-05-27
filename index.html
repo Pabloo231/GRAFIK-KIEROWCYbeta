@@ -2,87 +2,89 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Pracownika GAIT v1.2</title>
+    <title>Panel Pracownika GAiT v1.3</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    
     <style>
-        :root { --bg: #0a0a0c; --card: #16161a; --border: #333; --accent: #27ae60; --text: #ffffff; --orange: #f2994a; --muted: #888; }
+        :root { --bg: #0a0a0c; --card: #16161a; --border: #333; --accent: #27ae60; --text: #ffffff; --orange: #f2994a; --muted: #888; --blue: #2f80ed; --danger: #eb5757; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 20px; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        body { background: var(--bg); color: var(--text); height: 100vh; }
 
-        /* Logowanie */
+        /* Układ */
+        #dashboard-view { display: none; grid-template-columns: 80px 1fr; height: 100vh; transition: 0.3s; }
+        #dashboard-view:has(.sidebar:hover) { grid-template-columns: 240px 1fr; }
+        .sidebar { background: var(--card); border-right: 1px solid var(--border); padding: 20px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; gap: 10px; }
+        .menu-item { padding: 15px; cursor: pointer; color: white; border-radius: 10px; display: flex; align-items: center; gap: 15px; white-space: nowrap; }
+        .menu-item:hover { background: var(--blue); }
+        .sidebar:not(:hover) span { display: none; }
+
+        .main-content { padding: 20px; overflow-y: auto; }
         .login-box { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid var(--border); width: 100%; max-width: 400px; margin: 80px auto; text-align: center; }
-        input { width: 100%; padding: 14px; margin: 20px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; font-size: 15px; }
-
-        /* Dashboard */
+        input { width: 100%; padding: 14px; margin: 20px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; }
         .header-card { background: var(--card); padding: 25px; border-radius: 18px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .wrapper { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        .wrapper { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; }
         
-        /* Zdjęcie wozu */
-        .bus-photo-frame { width: 100%; height: 140px; background: #000; border-radius: 10px; margin: 10px 0 15px 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        #bus-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        /* Tabela Taboru - Nowoczesna */
+        .tabor-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .tabor-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
+        .tabor-table th { background: #1c1c22; padding: 15px; text-align: left; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--blue); }
+        .tabor-table td { padding: 16px; border-bottom: 1px solid #25252d; color: white; font-size: 14px; }
+        .tabor-table tr:hover { background: #202026; transition: 0.2s; }
 
-        /* Grafik */
-        .grafik-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 15px; }
-        .day-box { background: #1c1c22; border: 1px solid var(--border); padding: 18px; border-radius: 10px; text-align: center; transition: 0.2s; }
-        .day-box.active { border-color: var(--accent); background: #1a251f; }
+        .bus-photo-frame { width: 100%; height: 100px; background: #000; border-radius: 10px; margin-top: 10px; overflow: hidden; }
+        #bus-img { width: 100%; height: 100%; object-fit: cover; display: none; }
         
-        /* Ogłoszenia */
+        .grafik-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 15px; }
+        .day-box { background: #1c1c22; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; font-size: 11px; }
+        .day-box.active { border-color: var(--accent); background: #1a251f; }
         .msg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-top: 15px; }
         .msg-card { background: #1c1c22; border-left: 5px solid var(--orange); padding: 20px; border-radius: 10px; }
-        
-        button { background: #2f80ed; border: none; padding: 12px 24px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; font-size: 14px; }
         .v-tag { text-align: right; color: var(--muted); font-size: 12px; margin-top: 10px; }
-        h1 { font-size: 24px; }
-        h3 { font-size: 18px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="login-view" class="login-box">
-        <h2 style="font-size: 20px;">Panel Pracownika GAiT</h2>
-        <input type="number" id="driver-id" placeholder="Numer Służbowy">
-        <button onclick="login()" style="width:100%; background:var(--accent);">Zaloguj</button>
+<div id="login-view" class="login-box">
+    <h2>Panel Pracownika GAiT</h2>
+    <input type="number" id="driver-id" placeholder="Numer Służbowy">
+    <button onclick="login()" style="width:100%; background:var(--accent); border:none; padding:12px; color:white; cursor:pointer; border-radius:10px;">Zaloguj</button>
+</div>
+
+<div id="dashboard-view">
+    <div class="sidebar">
+        <div class="menu-item" onclick="showView('main')">🏠 <span>Dashboard</span></div>
+        <div class="menu-item" onclick="showView('tabor')">🚌 <span>Baza Taboru</span></div>
     </div>
-
-    <div id="dashboard-view" style="display:none;">
-        <div class="header-card">
-            <div>
+    <div class="main-content">
+        <div id="view-main">
+            <div class="header-card">
                 <h1 id="d-name">Witaj</h1>
+                <button onclick="location.reload()" style="background:#cc0000; border:none; padding:10px 20px; border-radius:8px; color:white; cursor:pointer;">Wyloguj</button>
             </div>
-            <button onclick="location.reload()" style="background:#cc0000;">Wyloguj</button>
-        </div>
-
-        <div class="wrapper">
-            <div class="sidebar">
+            <div class="wrapper">
                 <div class="card">
                     <h3>👤 Profil</h3>
-                    <p style="margin-top:15px; font-size: 14px;">Stały wóz: <b id="d-bus-side" style="color:var(--accent);">--</b></p>
-                    <div class="bus-photo-frame">
-                        <img id="bus-img" src="" alt="Zdjęcie wozu">
+                    <p style="margin-top:10px;">Wóz: <b id="d-bus-side" style="color:var(--accent);">--</b></p>
+                    <div class="bus-photo-frame"><img id="bus-img" src=""></div>
+                </div>
+                <div>
+                    <div class="card"><h3>📅 Grafik Tygodniowy</h3><div class="grafik-grid" id="days-container"></div></div>
+                    <div class="card">
+                        <h3>📢 Tablica Ogłoszeń</h3>
+                        <div class="msg-grid" id="announcements-container"></div>
+                        <div class="v-tag">Wersja Panelu v1.3</div>
                     </div>
-                    <p style="font-size:14px;">Status: <b style="color:var(--accent);">Aktywny</b></p>
-                    <p style="font-size:12px; color:var(--muted); margin-top:10px;">Data założenia:<br>26.05.2026</p>
                 </div>
             </div>
+        </div>
 
-            <div class="content">
-                <div class="card">
-                    <h3>📅 Grafik Tygodniowy</h3>
-                    <div class="grafik-grid" id="days-container"></div>
-                </div>
-
-                <div class="card">
-                    <h3>📢 Tablica Ogłoszeń</h3>
-                    <div class="msg-grid" id="announcements-container"></div>
-                </div>
-                <div class="v-tag">Wersja Panelu v1.2</div>
-            </div>
+        <div id="view-tabor" style="display:none;" class="tabor-card">
+            <h3 style="color: var(--blue);">🚌 Baza Taboru</h3>
+            <table class="tabor-table">
+                <thead><tr><th>Nr Taborowy</th><th>Operator</th><th>Marka</th><th>Model</th><th>Rok Produkcji</th></tr></thead>
+                <tbody id="tabor-body"></tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -90,51 +92,75 @@
 <script>
     const firebaseConfig = { databaseURL: "https://gait-panel-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const db = firebase.database();
+
+    function showView(v) {
+        document.getElementById('view-main').style.display = (v === 'main') ? 'block' : 'none';
+        document.getElementById('view-tabor').style.display = (v === 'tabor') ? 'block' : 'none';
+    }
 
     function login() {
         const id = document.getElementById('driver-id').value.trim();
         if(!id) return;
         
-        database.ref('systemDatabase/' + id).once('value').then(snap => {
+        db.ref('systemDatabase/' + id).once('value').then(snap => {
             const data = snap.val();
-            if(!data) return alert("Brak danych w systemie");
+            if(!data) return alert("Nie znaleziono pracownika!");
             
             document.getElementById('login-view').style.display = 'none';
-            document.getElementById('dashboard-view').style.display = 'block';
+            document.getElementById('dashboard-view').style.display = 'grid';
+            document.getElementById('d-name').innerText = "Witaj, " + (data.name || "Pracowniku");
+            document.getElementById('d-bus-side').innerText = data.busNum || "--";
             
-            // Ustawienie imienia w nagłówku
-            document.getElementById('d-name').innerText = "Witaj, " + data.name;
-            document.getElementById('d-bus-side').innerText = data.busNum;
-            
-            const busImg = document.getElementById('bus-img');
             if(data.busPhotoUrl) {
-                busImg.src = data.busPhotoUrl;
-                busImg.style.display = 'block';
+                const img = document.getElementById('bus-img');
+                img.src = data.busPhotoUrl;
+                img.style.display = 'block';
             }
-            
-            const cont = document.getElementById('days-container');
-            cont.innerHTML = data.schedule.map(s => `
-                <div class="day-box ${s.current ? 'active' : ''}">
-                    <div style="font-size:12px; font-weight:bold; margin-bottom:8px;">${s.date.split(' ')[0]}</div>
-                    ${s.line !== "---" ? `
-                        <div style="font-size:11px; margin-bottom:4px;">${s.hours}</div>
-                        <div style="font-size:11px; margin-bottom:4px;">🚌 ${s.dayBus}</div>
-                        <div style="color:var(--accent); font-weight:bold; font-size:12px;">${s.line}</div>
-                    ` : `<div style="font-size:11px; color:#555; padding:15px 0;">Wolne</div>`}
-                </div>
-            `).join('');
+
+            if(data.schedule) {
+                document.getElementById('days-container').innerHTML = data.schedule.map(s => `
+                    <div class="day-box ${s.current ? 'active' : ''}">
+                        <div style="font-weight:bold; margin-bottom:5px;">${s.date ? s.date.split(' ')[0] : ''}</div>
+                        ${s.line && s.line !== "---" ? `
+                            <div>${s.hours}</div>
+                            <div>🚌 ${s.dayBus}</div>
+                            <div style="color:var(--accent); font-weight:bold;">${s.line}</div>
+                        ` : '<div style="color:var(--muted); padding:10px 0;">Wolne</div>'}
+                    </div>
+                `).join('');
+            }
+            loadTabor();
         });
 
-        database.ref('dispatcherMessages').on('value', snap => {
+        db.ref('dispatcherMessages').on('value', snap => {
             const msgs = snap.val() || [];
             document.getElementById('announcements-container').innerHTML = msgs.map(m => `
                 <div class="msg-card">
-                    <div style="font-size:10px; font-weight:bold; color:var(--orange); text-transform:uppercase; margin-bottom:5px;">${m.tag}</div>
-                    <div style="font-weight:bold; font-size:14px; margin-bottom:5px;">${m.title}</div>
-                    <div style="font-size:12px; color:#ccc;">${m.content}</div>
+                    <div style="font-size:10px; color:var(--orange); font-weight:bold; text-transform:uppercase;">${m.tag || ''}</div>
+                    <div style="font-weight:bold; margin:5px 0;">${m.title || ''}</div>
+                    <div style="font-size:12px; color:#ccc;">${m.content || ''}</div>
                 </div>
             `).join('');
+        });
+    }
+
+    function loadTabor() {
+        db.ref('vehicles').once('value').then(snap => {
+            const body = document.getElementById('tabor-body');
+            body.innerHTML = '';
+            snap.forEach(child => {
+                const row = child.val();
+                const statusColor = (row.status === 'Serwis' || row.status === 'Awaria') ? 'var(--danger)' : 'var(--accent)';
+                body.innerHTML += `
+                    <tr>
+                        <td style="font-weight:bold; color:var(--blue)">${child.key}</td>
+                        <td>${row.model || '-'}</td>
+                        <td style="color:${statusColor}; font-weight:bold;">${row.status || '-'}</td>
+                        <td>${row.service || '-'}</td>
+                        <td>${row.mileage || '0'}</td>
+                    </tr>`;
+            });
         });
     }
 </script>
