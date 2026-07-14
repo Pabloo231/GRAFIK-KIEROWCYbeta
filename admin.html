@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Panel administracyjny — Moja strona</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="admin.html" aria-label="Panel administracyjny">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 5.5h16v13H4zM8 9h8M8 12h8M8 15h5" /></svg>
+        </span>
+        <span class="brand-copy">
+          <strong>Moja strona</strong>
+          <span>Panel administracyjny</span>
+        </span>
+      </a>
+
+      <div class="header-actions">
+        <span class="header-status">Tryb edycji</span>
+        <a class="header-link" href="index.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8" /><path d="M5.5 9.5V21h13V9.5M9 21v-7h6v7" /></svg>
+          Strona główna
+        </a>
+      </div>
+    </header>
+
+    <div class="page-layout">
+      <aside class="sidebar" aria-label="Panel administracyjny">
+        <span class="section-badge">Administracja</span>
+        <div class="sidebar-heading">
+          <h1>Edytuj zawartość</h1>
+          <p>Zmień zdjęcie i opis widoczny na stronie index.html.</p>
+        </div>
+
+        <form class="profile-form" id="profile-form">
+          <div>
+            <span class="field-label">Zdjęcie <small>PNG · JPG · WEBP</small></span>
+            <label class="image-upload" for="image-input">
+              <input id="image-input" type="file" accept="image/png,image/jpeg,image/webp" />
+              <img class="image-preview" id="image-preview" src="default-image.png" alt="Podgląd zdjęcia" />
+              <span class="change-image">Zmień zdjęcie</span>
+            </label>
+          </div>
+
+          <div class="position-control">
+            <div class="position-header">
+              <strong>Pozycja zdjęcia</strong>
+              <span class="position-value" id="position-value">X 50% · Y 50%</span>
+            </div>
+            <div class="position-grid" aria-label="Sterowanie pozycją zdjęcia">
+              <button class="position-button position-up" type="button" data-move="up" aria-label="Przesuń zdjęcie w górę">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+              </button>
+              <button class="position-button position-left" type="button" data-move="left" aria-label="Przesuń zdjęcie w lewo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+              </button>
+              <button class="position-button position-reset" type="button" data-move="reset" aria-label="Wyśrodkuj zdjęcie">•</button>
+              <button class="position-button position-right" type="button" data-move="right" aria-label="Przesuń zdjęcie w prawo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+              </button>
+              <button class="position-button position-down" type="button" data-move="down" aria-label="Przesuń zdjęcie w dół">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+              <p class="position-help">Ustaw widoczny fragment zdjęcia w sliderze.</p>
+            </div>
+          </div>
+
+          <label>
+            <span class="field-label">Opis <small>Do 600 znaków</small></span>
+            <textarea class="description" id="description" placeholder="Napisz krótki opis zdjęcia..." maxlength="600"></textarea>
+          </label>
+
+          <button class="primary-button save-button" type="submit">Zapisz zmiany</button>
+          <p class="save-status" id="save-status" role="status" aria-live="polite"></p>
+        </form>
+      </aside>
+
+      <main class="main-content">
+        <div class="content-header">
+          <div>
+            <span>Admin.html</span>
+            <h2>Podgląd przed publikacją</h2>
+          </div>
+          <div class="preview-note">Podgląd aktualizuje się podczas edycji</div>
+        </div>
+
+        <article class="content-card">
+          <div class="content-image-wrap">
+            <img class="content-image" id="content-image" src="default-image.png" alt="Podgląd głównego zdjęcia" />
+          </div>
+          <div class="content-body">
+            <span class="content-index" aria-hidden="true">01</span>
+            <p class="content-description" id="content-description">Dodaj opis w panelu po lewej stronie.</p>
+          </div>
+        </article>
+
+        <div class="admin-tip">
+          <strong>Wskazówka:</strong>
+          <span>Wybrane zdjęcie jest automatycznie zmniejszane przed zapisaniem, dzięki czemu strona działa płynnie. Po zapisaniu przejdź do index.html, aby zobaczyć opublikowaną wersję.</span>
+        </div>
+
+        <section class="news-admin" aria-labelledby="news-admin-heading">
+          <div class="news-admin-header">
+            <div>
+              <span>Zarządzanie treścią</span>
+              <h2 id="news-admin-heading">Dodaj aktualność</h2>
+            </div>
+            <span class="news-count" id="news-count">0 wpisów</span>
+          </div>
+
+          <form class="news-form" id="news-form">
+            <label class="news-field">
+              <span>Tytuł</span>
+              <input class="text-input" id="news-title" type="text" maxlength="80" placeholder="Tytuł aktualności" required />
+            </label>
+
+            <label class="news-field news-field-wide">
+              <span>Krótki opis</span>
+              <textarea class="description" id="news-summary" maxlength="220" placeholder="Napisz krótką treść aktualności..." required></textarea>
+            </label>
+
+            <label class="news-upload" for="news-image-input">
+              <input id="news-image-input" type="file" accept="image/png,image/jpeg,image/webp" />
+              <span class="news-upload-icon" aria-hidden="true">+</span>
+              <span><strong>Dodaj zdjęcie</strong><small id="news-image-name">Opcjonalnie · PNG, JPG lub WEBP</small></span>
+            </label>
+
+            <div class="news-form-actions">
+              <button class="primary-button" type="submit">Dodaj aktualność</button>
+              <p id="news-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+
+          <div class="admin-news-list" id="admin-news-list"></div>
+          <p class="admin-news-empty" id="admin-news-empty">Nie dodano jeszcze żadnych aktualności.</p>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "mojaStronaContentV1";
+      const NEWS_STORAGE_KEY = "mojaStronaNewsV1";
+      const DEFAULT_DESCRIPTION = "Dodaj opis w panelu administracyjnym.";
+      const imageInput = document.querySelector("#image-input");
+      const imagePreview = document.querySelector("#image-preview");
+      const contentImage = document.querySelector("#content-image");
+      const description = document.querySelector("#description");
+      const contentDescription = document.querySelector("#content-description");
+      const profileForm = document.querySelector("#profile-form");
+      const saveStatus = document.querySelector("#save-status");
+      const positionValue = document.querySelector("#position-value");
+      const positionButtons = document.querySelectorAll("[data-move]");
+      let pendingImage = "default-image.png";
+      let pendingNewsImage = "";
+      let positionX = 50;
+      let positionY = 50;
+
+      function readContent() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        } catch {
+          return {};
+        }
+      }
+
+      function renderPreview() {
+        const text = description.value.trim() || DEFAULT_DESCRIPTION;
+        imagePreview.src = pendingImage;
+        contentImage.src = pendingImage;
+        imagePreview.style.objectPosition = `${positionX}% ${positionY}%`;
+        contentImage.style.objectPosition = `${positionX}% ${positionY}%`;
+        contentDescription.textContent = text;
+        positionValue.textContent = `X ${positionX}% · Y ${positionY}%`;
+      }
+
+      function prepareImage(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = reject;
+          reader.onload = () => {
+            const image = new Image();
+            image.onerror = reject;
+            image.onload = () => {
+              const maxSize = 1600;
+              const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+              const canvas = document.createElement("canvas");
+              canvas.width = Math.round(image.width * scale);
+              canvas.height = Math.round(image.height * scale);
+              canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL("image/webp", 0.86));
+            };
+            image.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const saved = readContent();
+      pendingImage = saved.image || "default-image.png";
+      description.value = saved.description || "";
+      positionX = Math.min(100, Math.max(0, Number(saved.positionX ?? 50)));
+      positionY = Math.min(100, Math.max(0, Number(saved.positionY ?? 50)));
+      renderPreview();
+
+      imageInput.addEventListener("change", async () => {
+        const file = imageInput.files[0];
+        if (!file) return;
+
+        saveStatus.textContent = "Przygotowywanie zdjęcia...";
+
+        try {
+          pendingImage = await prepareImage(file);
+          imagePreview.alt = `Podgląd zdjęcia: ${file.name}`;
+          renderPreview();
+          saveStatus.textContent = "Zdjęcie jest gotowe do zapisania.";
+        } catch {
+          saveStatus.textContent = "Nie udało się odczytać zdjęcia.";
+        }
+      });
+
+      description.addEventListener("input", renderPreview);
+
+      positionButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const direction = button.dataset.move;
+          const step = 5;
+
+          if (direction === "left") positionX = Math.max(0, positionX - step);
+          if (direction === "right") positionX = Math.min(100, positionX + step);
+          if (direction === "up") positionY = Math.max(0, positionY - step);
+          if (direction === "down") positionY = Math.min(100, positionY + step);
+          if (direction === "reset") {
+            positionX = 50;
+            positionY = 50;
+          }
+
+          renderPreview();
+          saveStatus.textContent = "Pozycja zdjęcia jest gotowa do zapisania.";
+        });
+      });
+
+      profileForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const data = {
+          image: pendingImage,
+          description: description.value.trim(),
+          positionX,
+          positionY,
+        };
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          saveStatus.textContent = "Zmiany zostały zapisane.";
+
+          if ("BroadcastChannel" in window) {
+            const channel = new BroadcastChannel("moja-strona-content");
+            channel.postMessage(data);
+            channel.close();
+          }
+        } catch {
+          saveStatus.textContent = "Brak miejsca na zapis. Wybierz mniejsze zdjęcie.";
+        }
+      });
+
+      function readNews() {
+        try {
+          return JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveNews(items) {
+        localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(items));
+        if ("BroadcastChannel" in window) {
+          const channel = new BroadcastChannel("moja-strona-news");
+          channel.postMessage(items);
+          channel.close();
+        }
+      }
+
+      function renderAdminNews() {
+        const items = readNews();
+        const list = document.querySelector("#admin-news-list");
+        const empty = document.querySelector("#admin-news-empty");
+        const count = document.querySelector("#news-count");
+        list.replaceChildren();
+        empty.hidden = items.length > 0;
+        count.textContent = `${items.length} ${items.length === 1 ? "wpis" : "wpisów"}`;
+
+        items.forEach((item) => {
+          const card = document.createElement("article");
+          card.className = "admin-news-item";
+
+          const copy = document.createElement("div");
+          const date = document.createElement("span");
+          date.textContent = item.date;
+          const title = document.createElement("h3");
+          title.textContent = item.title;
+          const summary = document.createElement("p");
+          summary.textContent = item.summary;
+          copy.append(date, title, summary);
+
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "news-delete";
+          remove.dataset.newsId = item.id;
+          remove.textContent = "Usuń";
+          remove.setAttribute("aria-label", `Usuń aktualność: ${item.title}`);
+
+          card.append(copy, remove);
+          list.append(card);
+        });
+      }
+
+      const newsForm = document.querySelector("#news-form");
+      const newsImageInput = document.querySelector("#news-image-input");
+      const newsImageName = document.querySelector("#news-image-name");
+      const newsStatus = document.querySelector("#news-status");
+
+      newsImageInput.addEventListener("change", async () => {
+        const file = newsImageInput.files[0];
+        if (!file) return;
+        newsImageName.textContent = "Przygotowywanie zdjęcia...";
+
+        try {
+          pendingNewsImage = await prepareImage(file);
+          newsImageName.textContent = file.name;
+        } catch {
+          pendingNewsImage = "";
+          newsImageName.textContent = "Nie udało się odczytać zdjęcia";
+        }
+      });
+
+      newsForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const title = document.querySelector("#news-title").value.trim();
+        const summary = document.querySelector("#news-summary").value.trim();
+        if (!title || !summary) return;
+
+        const items = readNews();
+        items.unshift({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          title,
+          summary,
+          image: pendingNewsImage,
+          date: new Intl.DateTimeFormat("pl-PL", { day: "2-digit", month: "long", year: "numeric" }).format(new Date()),
+        });
+
+        try {
+          saveNews(items.slice(0, 24));
+          newsForm.reset();
+          pendingNewsImage = "";
+          newsImageName.textContent = "Opcjonalnie · PNG, JPG lub WEBP";
+          newsStatus.textContent = "Aktualność została dodana.";
+          renderAdminNews();
+        } catch {
+          newsStatus.textContent = "Brak miejsca na zapis. Wybierz mniejsze zdjęcie.";
+        }
+      });
+
+      document.querySelector("#admin-news-list").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-news-id]");
+        if (!button) return;
+        const items = readNews().filter((item) => item.id !== button.dataset.newsId);
+        saveNews(items);
+        newsStatus.textContent = "Aktualność została usunięta.";
+        renderAdminNews();
+      });
+
+      renderAdminNews();
+    </script>
+  </body>
+</html>
