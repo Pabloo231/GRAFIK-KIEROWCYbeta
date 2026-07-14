@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Moja strona</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header site-header-overlay">
+      <a class="brand" href="index.html" aria-label="Moja strona — strona główna">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 5.5h16v13H4zM8 9h8M8 12h8M8 15h5" /></svg>
+        </span>
+        <span class="brand-copy">
+          <strong>Moja strona</strong>
+          <span>Strona główna</span>
+        </span>
+      </a>
+
+      <div class="header-actions">
+        <a class="header-link" href="index.html" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8" /><path d="M5.5 9.5V21h13V9.5M9 21v-7h6v7" /></svg>
+          Strona główna
+        </a>
+        <a class="header-link" href="#aktualnosci">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5M8 16h8" /></svg>
+          Aktualności
+        </a>
+        <a class="secondary-button" href="admin.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.96 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7l2.83-2.83.06.06a1.7 1.7 0 0 0 1.88.34A1.7 1.7 0 0 0 10 3.01V3h4v.08a1.7 1.7 0 0 0 1.03 1.52 1.7 1.7 0 0 0 1.88-.34l.06-.06L19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" /></svg>
+          Panel administracyjny
+        </a>
+      </div>
+    </header>
+
+    <div class="public-layout">
+      <main class="public-main">
+        <section class="hero-slider" aria-label="Główny slajd strony">
+          <img class="hero-slider-image" id="content-image" src="default-image.png" alt="Główne zdjęcie strony" />
+          <div class="hero-slider-content">
+            <p class="hero-slider-description" id="content-description">Dodaj opis w panelu administracyjnym.</p>
+            <span class="slider-pagination" aria-label="Slajd 1 z 1">01 / 01</span>
+          </div>
+        </section>
+
+        <section class="news-section" id="aktualnosci" aria-labelledby="news-heading">
+          <div class="news-header">
+            <div>
+              <span class="news-eyebrow">Najnowsze wpisy</span>
+              <h2 id="news-heading">Aktualności</h2>
+            </div>
+            <p>Sprawdź najnowsze informacje i wydarzenia.</p>
+          </div>
+          <div class="news-grid" id="news-grid"></div>
+          <p class="news-empty" id="news-empty">Brak opublikowanych aktualności.</p>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "mojaStronaContentV1";
+      const NEWS_STORAGE_KEY = "mojaStronaNewsV1";
+      const DEFAULT_DESCRIPTION = "Dodaj opis w panelu administracyjnym.";
+      const contentImage = document.querySelector("#content-image");
+      const contentDescription = document.querySelector("#content-description");
+
+      function readContent() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        } catch {
+          return {};
+        }
+      }
+
+      function renderContent(data = readContent()) {
+        const image = data.image || "default-image.png";
+        const text = data.description || DEFAULT_DESCRIPTION;
+        const positionX = Math.min(100, Math.max(0, Number(data.positionX ?? 50)));
+        const positionY = Math.min(100, Math.max(0, Number(data.positionY ?? 50)));
+
+        contentImage.src = image;
+        contentImage.style.objectPosition = `${positionX}% ${positionY}%`;
+        contentDescription.textContent = text;
+      }
+
+      function readNews() {
+        try {
+          return JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      function renderNews(items = readNews()) {
+        const grid = document.querySelector("#news-grid");
+        const empty = document.querySelector("#news-empty");
+        grid.replaceChildren();
+        empty.hidden = items.length > 0;
+
+        items.forEach((item, index) => {
+          const card = document.createElement("article");
+          card.className = "news-card";
+
+          const media = document.createElement("div");
+          media.className = "news-card-media";
+
+          if (item.image) {
+            const image = document.createElement("img");
+            image.src = item.image;
+            image.alt = item.title;
+            media.append(image);
+          } else {
+            const placeholder = document.createElement("span");
+            placeholder.className = "news-card-placeholder";
+            placeholder.textContent = String(index + 1).padStart(2, "0");
+            media.append(placeholder);
+          }
+
+          const body = document.createElement("div");
+          body.className = "news-card-body";
+
+          const meta = document.createElement("div");
+          meta.className = "news-card-meta";
+          const date = document.createElement("time");
+          date.textContent = item.date || "Aktualność";
+          const number = document.createElement("span");
+          number.textContent = String(index + 1).padStart(2, "0");
+          meta.append(date, number);
+
+          const title = document.createElement("h3");
+          title.textContent = item.title;
+          const summary = document.createElement("p");
+          summary.textContent = item.summary;
+
+          body.append(meta, title, summary);
+          card.append(media, body);
+          grid.append(card);
+        });
+      }
+
+      renderContent();
+      renderNews();
+      window.addEventListener("storage", (event) => {
+        if (event.key === STORAGE_KEY) renderContent();
+        if (event.key === NEWS_STORAGE_KEY) renderNews();
+      });
+
+      if ("BroadcastChannel" in window) {
+        const channel = new BroadcastChannel("moja-strona-content");
+        channel.addEventListener("message", (event) => renderContent(event.data));
+      }
+
+      if ("BroadcastChannel" in window) {
+        const newsChannel = new BroadcastChannel("moja-strona-news");
+        newsChannel.addEventListener("message", (event) => renderNews(event.data));
+      }
+    </script>
+  </body>
+</html>
